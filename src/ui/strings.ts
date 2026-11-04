@@ -22,6 +22,7 @@ export const strings = {
     counterText: (count: number, target: number) => `${count} / ${target}`,
     counter: (count: number, target: number) => `${count} signes sur ${target} aujourd’hui`,
     celebration: 'Bravo ! 10 signes aujourd’hui 🎉',
-    logType: (label: string) => `Enregistrer : ${label}`,
+    logType: (label: string, count: number) =>
+      count > 0 ? `Enregistrer : ${label}, ${count} aujourd’hui` : `Enregistrer : ${label}`,
   },
 };

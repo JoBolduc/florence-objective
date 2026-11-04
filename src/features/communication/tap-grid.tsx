@@ -11,11 +11,19 @@ import { useTapGrid } from './use-tap-grid';
 
 const TILE_MIN_HEIGHT = 128;
 
-function Tile({ type, onPress }: { type: CommunicationTypeRecord; onPress: () => void }) {
+function Tile({
+  type,
+  count,
+  onPress,
+}: {
+  type: CommunicationTypeRecord;
+  count: number;
+  onPress: () => void;
+}) {
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={strings.today.logType(type.label)}
+      accessibilityLabel={strings.today.logType(type.label, count)}
       onPress={onPress}
       style={({ pressed }) => [styles.tile, pressed && styles.tilePressed]}
     >
@@ -23,12 +31,20 @@ function Tile({ type, onPress }: { type: CommunicationTypeRecord; onPress: () =>
         {type.icon}
       </AppText>
       <AppText variant="label">{type.label}</AppText>
+      {count > 0 && (
+        <View style={styles.badge}>
+          <AppText variant="caption" color="onPrimary" style={styles.badgeText}>
+            {count}
+          </AppText>
+        </View>
+      )}
     </Pressable>
   );
 }
 
 export function TapGrid() {
-  const { types, status, count, saveFailed, celebrating, endCelebration, log } = useTapGrid();
+  const { types, status, count, typeCounts, saveFailed, celebrating, endCelebration, log } =
+    useTapGrid();
 
   if (status === 'loading') return <AppText color="textMuted">{strings.today.loading}</AppText>;
   if (status === 'loadFailed') return <AppText color="danger">{strings.today.loadFailed}</AppText>;
@@ -47,7 +63,12 @@ export function TapGrid() {
       )}
       <View style={styles.grid}>
         {types.map((type) => (
-          <Tile key={type.id} type={type} onPress={() => log(type.id)} />
+          <Tile
+            key={type.id}
+            type={type}
+            count={typeCounts[type.id] ?? 0}
+            onPress={() => log(type.id)}
+          />
         ))}
       </View>
     </ScrollView>
@@ -79,6 +100,22 @@ const styles = StyleSheet.create({
   },
   tilePressed: {
     backgroundColor: colors.primarySoft,
+  },
+  badge: {
+    position: 'absolute',
+    top: spacing.sm,
+    right: spacing.sm,
+    minWidth: 28,
+    height: 28,
+    paddingHorizontal: spacing.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 14,
+    backgroundColor: colors.primary,
+  },
+  badgeText: {
+    fontWeight: '700',
+    lineHeight: 22,
   },
   icon: {
     textAlign: 'center',

@@ -157,6 +157,17 @@ export function createEventRepository(db: SqlDatabase, deps: RepositoryDeps = de
       return row?.total ?? 0;
     },
 
+    /** Live events of one local day, per type id. Types never logged are absent. */
+    async countsByType(childId: string, localDate: string): Promise<Record<string, number>> {
+      const rows = await db.getAllAsync<{ typeId: string; total: number }>(
+        `SELECT type_id AS typeId, COUNT(*) AS total FROM event
+         WHERE child_id = ? AND local_date = ? AND deleted_at IS NULL
+         GROUP BY type_id`,
+        [childId, localDate],
+      );
+      return Object.fromEntries(rows.map((r) => [r.typeId, r.total]));
+    },
+
     /** Live events of one local day, newest first. */
     listByDay(childId: string, localDate: string): Promise<EventRecord[]> {
       return db.getAllAsync<EventRecord>(

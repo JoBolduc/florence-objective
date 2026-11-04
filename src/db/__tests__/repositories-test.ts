@@ -195,4 +195,16 @@ describe('event counts', () => {
     expect(await events.countByDay(child.id, '2026-11-03')).toBe(1);
     expect(await events.countByDay(child.id, '2026-11-04')).toBe(0);
   });
+
+  it('counts live events per type for one day', async () => {
+    const { events, child } = await setup();
+    const day = new Date(2026, 10, 2, 10, 0);
+    await events.insert({ childId: child.id, typeId: 'encore', occurredAt: day });
+    await events.insert({ childId: child.id, typeId: 'encore', occurredAt: day });
+    const gone = await events.insert({ childId: child.id, typeId: 'fini', occurredAt: day });
+    await events.insert({ childId: child.id, typeId: 'encore', occurredAt: new Date(2026, 10, 3) });
+    await events.softDelete(gone.id);
+
+    expect(await events.countsByType(child.id, '2026-11-02')).toEqual({ encore: 2 });
+  });
 });

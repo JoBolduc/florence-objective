@@ -24,6 +24,7 @@ export function useTapGrid() {
   const [types, setTypes] = useState<CommunicationTypeRecord[]>([]);
   const [childId, setChildId] = useState<string | null>(null);
   const [count, setCount] = useState(0);
+  const [typeCounts, setTypeCounts] = useState<Record<string, number>>({});
   const [status, setStatus] = useState<Status>('loading');
   const [saveFailed, setSaveFailed] = useState(false);
   const [celebrating, setCelebrating] = useState(false);
@@ -39,9 +40,10 @@ export function useTapGrid() {
     let cancelled = false;
     (async () => {
       const child = await children.getOrCreateFirst(DEFAULT_CHILD_NAME);
-      const [loadedTypes, total] = await Promise.all([
+      const [loadedTypes, total, perType] = await Promise.all([
         communicationTypes.list(),
         events.countByDay(child.id, day),
+        events.countsByType(child.id, day),
       ]);
       if (cancelled) return;
       countRef.current = total;
@@ -50,6 +52,7 @@ export function useTapGrid() {
       setTypes(loadedTypes);
       setChildId(child.id);
       setCount(total);
+      setTypeCounts(perType);
       setStatus('ready');
     })().catch(() => {
       if (!cancelled) setStatus('loadFailed');
@@ -71,6 +74,7 @@ export function useTapGrid() {
           if (event.localDate !== day) return;
           countRef.current += 1;
           setCount(countRef.current);
+          setTypeCounts((prev) => ({ ...prev, [typeId]: (prev[typeId] ?? 0) + 1 }));
           if (countRef.current >= DAILY_TARGET && celebratedDay.current !== day) {
             celebratedDay.current = day;
             setCelebrating(true);
@@ -84,5 +88,5 @@ export function useTapGrid() {
 
   const endCelebration = useCallback(() => setCelebrating(false), []);
 
-  return { types, status, count, saveFailed, celebrating, endCelebration, log };
+  return { types, status, count, typeCounts, saveFailed, celebrating, endCelebration, log };
 }
