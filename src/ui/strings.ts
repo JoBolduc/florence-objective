@@ -19,6 +19,9 @@ export const strings = {
     loading: 'Chargement…',
     saveFailed: 'L’enregistrement a échoué. Réessayez.',
     loadFailed: 'Impossible de charger les signes.',
+    counterText: (count: number, target: number) => `${count} / ${target}`,
+    counter: (count: number, target: number) => `${count} signes sur ${target} aujourd’hui`,
+    celebration: 'Bravo ! 10 signes aujourd’hui 🎉',
     logType: (label: string) => `Enregistrer : ${label}`,
   },
 };

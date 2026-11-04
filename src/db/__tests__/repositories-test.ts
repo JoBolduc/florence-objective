@@ -177,3 +177,22 @@ describe('child repository', () => {
     expect(await children.list()).toHaveLength(1);
   });
 });
+
+describe('event counts', () => {
+  it('counts live events of one day only', async () => {
+    const { events, child } = await setup();
+    const day = new Date(2026, 10, 2, 10, 0);
+    await events.insert({ childId: child.id, typeId: 'encore', occurredAt: day });
+    const gone = await events.insert({ childId: child.id, typeId: 'fini', occurredAt: day });
+    await events.insert({
+      childId: child.id,
+      typeId: 'manger',
+      occurredAt: new Date(2026, 10, 3, 8),
+    });
+    await events.softDelete(gone.id);
+
+    expect(await events.countByDay(child.id, '2026-11-02')).toBe(1);
+    expect(await events.countByDay(child.id, '2026-11-03')).toBe(1);
+    expect(await events.countByDay(child.id, '2026-11-04')).toBe(0);
+  });
+});

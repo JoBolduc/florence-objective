@@ -9,6 +9,7 @@ import {
   createEventRepository,
 } from './repositories';
 
+export { toLocalDate } from './clock';
 export { DATABASE_NAME } from './database';
 export type {
   ChildRecord,

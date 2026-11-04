@@ -147,6 +147,16 @@ export function createEventRepository(db: SqlDatabase, deps: RepositoryDeps = de
       return record;
     },
 
+    /** Number of live events on one local day. */
+    async countByDay(childId: string, localDate: string): Promise<number> {
+      const row = await db.getFirstAsync<{ total: number }>(
+        `SELECT COUNT(*) AS total FROM event
+         WHERE child_id = ? AND local_date = ? AND deleted_at IS NULL`,
+        [childId, localDate],
+      );
+      return row?.total ?? 0;
+    },
+
     /** Live events of one local day, newest first. */
     listByDay(childId: string, localDate: string): Promise<EventRecord[]> {
       return db.getAllAsync<EventRecord>(

@@ -5,6 +5,8 @@ import { AppText } from '@/ui/app-text';
 import { strings } from '@/ui/strings';
 import { colors, radii, spacing } from '@/ui/theme';
 
+import { Celebration } from './celebration';
+import { DailyCounter } from './daily-counter';
 import { useTapGrid } from './use-tap-grid';
 
 const TILE_MIN_HEIGHT = 128;
@@ -26,13 +28,15 @@ function Tile({ type, onPress }: { type: CommunicationTypeRecord; onPress: () =>
 }
 
 export function TapGrid() {
-  const { types, status, saveFailed, log } = useTapGrid();
+  const { types, status, count, saveFailed, celebrating, endCelebration, log } = useTapGrid();
 
   if (status === 'loading') return <AppText color="textMuted">{strings.today.loading}</AppText>;
   if (status === 'loadFailed') return <AppText color="danger">{strings.today.loadFailed}</AppText>;
 
   return (
     <ScrollView contentContainerStyle={styles.content}>
+      <DailyCounter count={count} />
+      {celebrating && <Celebration onDone={endCelebration} />}
       <AppText color="textMuted" style={styles.reminder}>
         {strings.today.reminder}
       </AppText>
