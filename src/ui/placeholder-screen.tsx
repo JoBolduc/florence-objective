@@ -1,12 +1,13 @@
+import type { ReactNode } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
-import { UpdateCheck } from '@/features/update-check/update-check';
-
-export default function Index() {
+export function PlaceholderScreen({ title, children }: { title: string; children?: ReactNode }) {
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Petits Pas</Text>
-      <UpdateCheck />
+      <Text accessibilityRole="header" style={styles.title}>
+        {title}
+      </Text>
+      {children}
     </View>
   );
 }
