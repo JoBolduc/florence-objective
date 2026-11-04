@@ -36,7 +36,11 @@ export function useTapGrid() {
   const log = useCallback(
     (typeId: string) => {
       if (!childId) return;
-      Haptics.performAndroidHapticsAsync(Haptics.AndroidHaptics.Virtual_Key).catch(() => {});
+      try {
+        Haptics.performAndroidHapticsAsync(Haptics.AndroidHaptics.Virtual_Key).catch(() => {});
+      } catch {
+        // Haptics are a bonus: never let them stop the event from being saved.
+      }
       events
         .insert({ childId, typeId })
         .then(() => setSaveFailed(false))
