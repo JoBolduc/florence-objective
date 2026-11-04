@@ -53,7 +53,38 @@ CREATE TABLE day_note (
 CREATE UNIQUE INDEX day_note_child_day ON day_note (child_id, local_date) WHERE deleted_at IS NULL;
 `;
 
-export const MIGRATIONS: readonly Migration[] = [{ version: 1, up: SCHEMA_V1 }];
+/**
+ * Communication types: the behaviours a parent can log (E1-S1). The seven starter
+ * types are the words of "Les mains animées" the specialists' plan focuses on.
+ * Ids are stable slugs because `event.type_id` points at them. The seed is frozen
+ * here: later changes to types go through a new migration or the in-app editor (E6-S5).
+ */
+const SCHEMA_V2 = `
+CREATE TABLE communication_type (
+  id TEXT PRIMARY KEY NOT NULL,
+  label TEXT NOT NULL,
+  icon TEXT NOT NULL,
+  sort_order INTEGER NOT NULL,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  deleted_at TEXT,
+  logged_by TEXT
+);
+
+INSERT INTO communication_type (id, label, icon, sort_order, created_at, updated_at) VALUES
+  ('encore',   'Encore',   '🔄', 1, '2026-11-03T00:00:00.000Z', '2026-11-03T00:00:00.000Z'),
+  ('fini',     'Fini',     '✅', 2, '2026-11-03T00:00:00.000Z', '2026-11-03T00:00:00.000Z'),
+  ('fache',    'Fâché',    '😠', 3, '2026-11-03T00:00:00.000Z', '2026-11-03T00:00:00.000Z'),
+  ('donner',   'Donner',   '🎁', 4, '2026-11-03T00:00:00.000Z', '2026-11-03T00:00:00.000Z'),
+  ('aider',    'Aider',    '🤝', 5, '2026-11-03T00:00:00.000Z', '2026-11-03T00:00:00.000Z'),
+  ('attendre', 'Attendre', '⏳', 6, '2026-11-03T00:00:00.000Z', '2026-11-03T00:00:00.000Z'),
+  ('manger',   'Manger',   '🍽️', 7, '2026-11-03T00:00:00.000Z', '2026-11-03T00:00:00.000Z');
+`;
+
+export const MIGRATIONS: readonly Migration[] = [
+  { version: 1, up: SCHEMA_V1 },
+  { version: 2, up: SCHEMA_V2 },
+];
 
 export async function getSchemaVersion(db: SqlDatabase): Promise<number> {
   const row = await db.getFirstAsync<{ user_version: number }>('PRAGMA user_version', []);

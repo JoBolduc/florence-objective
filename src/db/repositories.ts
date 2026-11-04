@@ -29,6 +29,14 @@ export interface DayNoteRecord extends SyncColumns {
   body: string;
 }
 
+export interface CommunicationTypeRecord extends SyncColumns {
+  label: string;
+  /** Emoji shown on the logging button. */
+  icon: string;
+  /** Position in the type grid, ascending. */
+  sortOrder: number;
+}
+
 const SYNC_SELECT = `id, created_at AS createdAt, updated_at AS updatedAt,
   deleted_at AS deletedAt, logged_by AS loggedBy`;
 
@@ -37,6 +45,21 @@ const EVENT_SELECT = `SELECT ${SYNC_SELECT}, child_id AS childId, type_id AS typ
   occurred_at AS occurredAt, local_date AS localDate, note FROM event`;
 const DAY_NOTE_SELECT = `SELECT ${SYNC_SELECT}, child_id AS childId, local_date AS localDate,
   body FROM day_note`;
+
+const COMMUNICATION_TYPE_SELECT = `SELECT ${SYNC_SELECT}, label, icon,
+  sort_order AS sortOrder FROM communication_type`;
+
+export function createCommunicationTypeRepository(db: SqlDatabase) {
+  return {
+    /** Live types in display order. */
+    list(): Promise<CommunicationTypeRecord[]> {
+      return db.getAllAsync<CommunicationTypeRecord>(
+        `${COMMUNICATION_TYPE_SELECT} WHERE deleted_at IS NULL ORDER BY sort_order`,
+        [],
+      );
+    },
+  };
+}
 
 export function createChildRepository(db: SqlDatabase, deps: RepositoryDeps = defaultDeps) {
   return {

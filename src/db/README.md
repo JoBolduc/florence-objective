@@ -12,4 +12,5 @@ Local SQLite storage (expo-sqlite), opened once by `<SQLiteProvider>` in `src/ap
 - Every table has the sync columns `id` (client UUID), `created_at`, `updated_at`, `deleted_at`, `logged_by`. Timestamps are UTC ISO 8601 strings.
 - Never `DELETE` rows: set `deleted_at` (and `updated_at`) so the deletion can sync (E2).
 - Every write bumps `updated_at`; sync resolves conflicts with it (last write wins).
+- `communication_type` is seeded by migration 2 with stable slug ids (`encore`, `fini`, `fache`, `donner`, `aider`, `attendre`, `manger`). `event.type_id` stores these ids; never reuse or renumber one.
 - Events store both `occurred_at` (UTC) and `local_date` (the phone's calendar day), so days follow local midnight.
