@@ -81,9 +81,13 @@ INSERT INTO communication_type (id, label, icon, sort_order, created_at, updated
   ('manger',   'Manger',   '🍽️', 7, '2026-11-03T00:00:00.000Z', '2026-11-03T00:00:00.000Z');
 `;
 
+/** Drops the temporary E0-S2 update-check counter, which lived outside the migrations. */
+const SCHEMA_V3 = `DROP TABLE IF EXISTS update_check;`;
+
 export const MIGRATIONS: readonly Migration[] = [
   { version: 1, up: SCHEMA_V1 },
   { version: 2, up: SCHEMA_V2 },
+  { version: 3, up: SCHEMA_V3 },
 ];
 
 export async function getSchemaVersion(db: SqlDatabase): Promise<number> {

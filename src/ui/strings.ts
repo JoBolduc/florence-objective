@@ -14,14 +14,11 @@ export const strings = {
     message: 'Cette page n’existe pas.',
     backHome: 'Retour à l’accueil',
   },
-  // Temporary (E0-S2): remove with the update check in E1-S2.
-  updateCheck: {
-    title: 'Test de mise à jour',
-    buildVersion: (version: string | null) => `Version de build : ${version ?? '?'}`,
-    openedAt: (time: string) => `Ouvert à ${time}`,
-    loading: '…',
-    failed: 'Impossible d’accéder au compteur.',
-    increment: '+1',
-    incrementLabel: 'Ajouter 1 au compteur',
+  today: {
+    reminder: 'Un appui par séquence. Seulement les signes spontanés.',
+    loading: 'Chargement…',
+    saveFailed: 'L’enregistrement a échoué. Réessayez.',
+    loadFailed: 'Impossible de charger les signes.',
+    logType: (label: string) => `Enregistrer : ${label}`,
   },
 };

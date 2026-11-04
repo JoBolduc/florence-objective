@@ -8,7 +8,6 @@ import {
   createDayNoteRepository,
   createEventRepository,
 } from './repositories';
-import { createUpdateCheckRepository } from './update-check';
 
 export { DATABASE_NAME } from './database';
 export type {
@@ -26,15 +25,13 @@ export async function initDatabase(db: SQLiteDatabase): Promise<void> {
 
 export function useRepositories() {
   const db = useSQLiteContext();
-  return {
-    children: createChildRepository(db),
-    communicationTypes: createCommunicationTypeRepository(db),
-    events: createEventRepository(db),
-    dayNotes: createDayNoteRepository(db),
-  };
-}
-
-export function useUpdateCheckRepository() {
-  const db = useSQLiteContext();
-  return useMemo(() => createUpdateCheckRepository(db), [db]);
+  return useMemo(
+    () => ({
+      children: createChildRepository(db),
+      communicationTypes: createCommunicationTypeRepository(db),
+      events: createEventRepository(db),
+      dayNotes: createDayNoteRepository(db),
+    }),
+    [db],
+  );
 }

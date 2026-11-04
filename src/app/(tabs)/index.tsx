@@ -1,8 +1,10 @@
 import { useState } from 'react';
+import { StyleSheet, View } from 'react-native';
 
+import { TapGrid } from '@/features/communication/tap-grid';
 import { AppText } from '@/ui/app-text';
-import { CenteredScreen } from '@/ui/centered-screen';
 import { formatDate } from '@/ui/format';
+import { colors, spacing } from '@/ui/theme';
 import { strings } from '@/ui/strings';
 
 export default function Today() {
@@ -10,8 +12,25 @@ export default function Today() {
   const [today] = useState(() => new Date());
 
   return (
-    <CenteredScreen title={strings.tabs.today}>
-      <AppText color="textMuted">{formatDate(today)}</AppText>
-    </CenteredScreen>
+    <View style={styles.container}>
+      <AppText accessibilityRole="header" variant="heading" style={styles.title}>
+        {strings.tabs.today}
+      </AppText>
+      <AppText color="textMuted" style={styles.title}>
+        {formatDate(today)}
+      </AppText>
+      <TapGrid />
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    paddingTop: spacing.xl,
+    backgroundColor: colors.background,
+  },
+  title: {
+    textAlign: 'center',
+  },
+});

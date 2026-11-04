@@ -163,3 +163,17 @@ describe('day note repository', () => {
     expect(second.id).not.toBe(first.id);
   });
 });
+
+describe('child repository', () => {
+  it('creates the child once and returns it afterwards', async () => {
+    const db = openTestDatabase();
+    await migrate(db);
+    const children = createChildRepository(db, testDeps().deps);
+
+    const first = await children.getOrCreateFirst('Florence');
+    const again = await children.getOrCreateFirst('Autre');
+
+    expect(again.id).toBe(first.id);
+    expect(await children.list()).toHaveLength(1);
+  });
+});

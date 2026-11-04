@@ -62,30 +62,39 @@ export function createCommunicationTypeRepository(db: SqlDatabase) {
 }
 
 export function createChildRepository(db: SqlDatabase, deps: RepositoryDeps = defaultDeps) {
-  return {
-    async insert(input: { name: string; loggedBy?: string | null }): Promise<ChildRecord> {
-      const now = deps.now().toISOString();
-      const record: ChildRecord = {
-        id: deps.newId(),
-        name: input.name,
-        createdAt: now,
-        updatedAt: now,
-        deletedAt: null,
-        loggedBy: input.loggedBy ?? null,
-      };
-      await db.runAsync(
-        `INSERT INTO child (id, name, created_at, updated_at, deleted_at, logged_by)
-         VALUES (?, ?, ?, ?, ?, ?)`,
-        [record.id, record.name, now, now, null, record.loggedBy],
-      );
-      return record;
-    },
+  const list = () =>
+    db.getAllAsync<ChildRecord>(`${CHILD_SELECT} WHERE deleted_at IS NULL ORDER BY created_at`, []);
 
-    list(): Promise<ChildRecord[]> {
-      return db.getAllAsync<ChildRecord>(
-        `${CHILD_SELECT} WHERE deleted_at IS NULL ORDER BY created_at`,
-        [],
-      );
+  const insert = async (input: {
+    name: string;
+    loggedBy?: string | null;
+  }): Promise<ChildRecord> => {
+    const now = deps.now().toISOString();
+    const record: ChildRecord = {
+      id: deps.newId(),
+      name: input.name,
+      createdAt: now,
+      updatedAt: now,
+      deletedAt: null,
+      loggedBy: input.loggedBy ?? null,
+    };
+    await db.runAsync(
+      `INSERT INTO child (id, name, created_at, updated_at, deleted_at, logged_by)
+         VALUES (?, ?, ?, ?, ?, ?)`,
+      [record.id, record.name, now, now, null, record.loggedBy],
+    );
+    return record;
+  };
+
+  return {
+    insert,
+
+    list,
+
+    /** The first child, created with `name` on first launch (the app tracks one child). */
+    async getOrCreateFirst(name: string): Promise<ChildRecord> {
+      const [first] = await list();
+      return first ?? insert({ name });
     },
   };
 }

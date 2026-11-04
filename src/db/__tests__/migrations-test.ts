@@ -130,3 +130,18 @@ describe('migrate', () => {
     );
   });
 });
+
+describe('migration 3', () => {
+  it('drops the temporary update_check table and keeps its absence idempotent', async () => {
+    const db = openTestDatabase();
+    await migrate(db, MIGRATIONS.slice(0, 2));
+    await db.execAsync('CREATE TABLE update_check (id INTEGER PRIMARY KEY, count INTEGER)');
+
+    await migrate(db);
+    expect(await tableNames(db)).not.toContain('update_check');
+
+    const fresh = openTestDatabase();
+    await migrate(fresh);
+    expect(await tableNames(fresh)).not.toContain('update_check');
+  });
+});
