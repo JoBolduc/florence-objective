@@ -6,7 +6,9 @@ import { DATABASE_NAME, initDatabase } from '@/db';
 export default function RootLayout() {
   return (
     <SQLiteProvider databaseName={DATABASE_NAME} onInit={initDatabase}>
-      <Stack />
+      <Stack>
+        <Stack.Screen name="index" options={{ headerShown: false }} />
+      </Stack>
     </SQLiteProvider>
   );
 }

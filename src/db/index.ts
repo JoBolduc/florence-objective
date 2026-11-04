@@ -1,4 +1,5 @@
 import { useSQLiteContext, type SQLiteDatabase } from 'expo-sqlite';
+import { useMemo } from 'react';
 
 import { migrate } from './migrations';
 import {
@@ -6,6 +7,7 @@ import {
   createDayNoteRepository,
   createEventRepository,
 } from './repositories';
+import { createUpdateCheckRepository } from './update-check';
 
 export { DATABASE_NAME } from './database';
 export type { ChildRecord, DayNoteRecord, EventRecord } from './repositories';
@@ -23,4 +25,9 @@ export function useRepositories() {
     events: createEventRepository(db),
     dayNotes: createDayNoteRepository(db),
   };
+}
+
+export function useUpdateCheckRepository() {
+  const db = useSQLiteContext();
+  return useMemo(() => createUpdateCheckRepository(db), [db]);
 }
