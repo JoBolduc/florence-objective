@@ -1,11 +1,11 @@
 import { UpdateCheck } from '@/features/update-check/update-check';
-import { PlaceholderScreen } from '@/ui/placeholder-screen';
+import { CenteredScreen } from '@/ui/centered-screen';
 import { strings } from '@/ui/strings';
 
 export default function Settings() {
   return (
-    <PlaceholderScreen title={strings.tabs.settings}>
+    <CenteredScreen title={strings.tabs.settings}>
       <UpdateCheck />
-    </PlaceholderScreen>
+    </CenteredScreen>
   );
 }
