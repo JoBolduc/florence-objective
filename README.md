@@ -29,4 +29,25 @@ npm run check        # both
 npm run format       # apply Prettier
 ```
 
-The app uses a development build (`expo-dev-client`), not Expo Go. Build it in the cloud with `npx eas-cli@latest build --profile development --platform android` and install the APK on the phone.
+The app uses a development build (`expo-dev-client`), not Expo Go.
+
+## Install on a phone
+
+Both builds are APKs made by EAS and installed outside the Play Store.
+
+```bash
+npx eas-cli@latest build --profile preview --platform android      # the app, for both phones
+npx eas-cli@latest build --profile development --platform android  # dev client, for `npm start`
+```
+
+Each finished build has an install link. Open it on the phone, download the APK, and accept the warning about apps from outside the Play Store. Anyone with the link can download the build, so share it only between the two of you.
+
+To update, install a newer APK over the current one. Do not uninstall first: that erases the local data.
+
+An update keeps local data only if all of these hold:
+
+- `android.package` in `app.json` stays the same.
+- EAS signs with the same keystore. It is stored on EAS, so never delete it.
+- The build number never goes down. EAS raises it on every build (`appVersionSource: remote`, `autoIncrement`).
+
+Both profiles share one package, so a phone holds either the preview or the development build, not both. Switching between them replaces the app and keeps its data.

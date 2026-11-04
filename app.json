@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Petits Pas",
-    "slug": "petits-pas",
+    "slug": "florence-objectif",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -39,6 +39,12 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "20f3b75d-d62c-40f5-b7be-97817b72dbfa"
+      }
+    },
+    "owner": "jonasbols-team"
   }
 }
