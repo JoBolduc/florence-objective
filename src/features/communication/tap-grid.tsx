@@ -8,6 +8,7 @@ import { colors, minTouchTarget, radii, spacing } from '@/ui/theme';
 
 import { Celebration } from './celebration';
 import { DailyCounter } from './daily-counter';
+import { DayNoteField } from './day-note-field';
 import { EventSheet } from './event-sheet';
 import { Timeline } from './timeline';
 import { UndoSnackbar } from './undo-snackbar';
@@ -56,6 +57,9 @@ export function TapGrid({ day }: { day: string }) {
     count,
     typeCounts,
     todayEvents,
+    dayNote,
+    loadedDay,
+    saveDayNote,
     saveFailed,
     celebrating,
     endCelebration,
@@ -102,6 +106,7 @@ export function TapGrid({ day }: { day: string }) {
             />
           ))}
         </View>
+        <DayNoteField key={loadedDay} initialBody={dayNote} onSave={saveDayNote} />
         <Timeline
           events={todayEvents}
           types={types}

@@ -14,6 +14,10 @@ export const strings = {
     message: 'Cette page n’existe pas.',
     backHome: 'Retour à l’accueil',
   },
+  dayNote: {
+    label: 'Note du jour',
+    placeholder: 'Ex. : mauvaise nuit, rhume, changement à la garderie…',
+  },
   sheet: {
     title: 'Modifier le signe',
     typeLabel: 'Type',

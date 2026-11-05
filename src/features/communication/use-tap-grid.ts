@@ -21,11 +21,14 @@ function buzz(type: (typeof Haptics.AndroidHaptics)[keyof typeof Haptics.Android
 
 /** `day` is the local date being shown (YYYY-MM-DD); a new value reloads the screen for that day. */
 export function useTapGrid(day: string) {
-  const { children, communicationTypes, events } = useRepositories();
+  const { children, communicationTypes, events, dayNotes } = useRepositories();
   const [types, setTypes] = useState<CommunicationTypeRecord[]>([]);
   const [childId, setChildId] = useState<string | null>(null);
   // Today's live events, newest first. The counter, badges and timeline all derive from it.
   const [todayEvents, setTodayEvents] = useState<EventRecord[]>([]);
+  const [dayNote, setDayNote] = useState('');
+  // The day the loaded data belongs to; lags `day` until the reload finishes.
+  const [loadedDay, setLoadedDay] = useState<string | null>(null);
   const [status, setStatus] = useState<Status>('loading');
   const [saveFailed, setSaveFailed] = useState(false);
   const [celebrating, setCelebrating] = useState(false);
@@ -55,15 +58,18 @@ export function useTapGrid(day: string) {
     let cancelled = false;
     (async () => {
       const child = await children.getOrCreateFirst(DEFAULT_CHILD_NAME);
-      const [loadedTypes, list] = await Promise.all([
+      const [loadedTypes, list, note] = await Promise.all([
         communicationTypes.list(),
         events.listByDay(child.id, day),
+        dayNotes.getForDay(child.id, day),
       ]);
       if (cancelled) return;
       // Today already reached the target before this launch: nothing to celebrate.
       if (list.length >= DAILY_TARGET) celebratedDay.current = day;
       applyEvents(list);
       setUndoable(null);
+      setDayNote(note?.body ?? '');
+      setLoadedDay(day);
       setTypes(loadedTypes);
       setChildId(child.id);
       setStatus('ready');
@@ -73,7 +79,7 @@ export function useTapGrid(day: string) {
     return () => {
       cancelled = true;
     };
-  }, [children, communicationTypes, events, day, applyEvents]);
+  }, [children, communicationTypes, events, dayNotes, day, applyEvents]);
 
   /** One tap = one event. Haptics fire first so feedback never waits on the database. */
   const log = useCallback(
@@ -145,6 +151,25 @@ export function useTapGrid(day: string) {
     }
   }, [undoable, childId, events, reload]);
 
+  /** Saves the day's note; clearing the text removes the note (soft delete). */
+  const saveDayNote = useCallback(
+    async (body: string) => {
+      if (!childId) return;
+      try {
+        const text = body.trim();
+        if (text) {
+          await dayNotes.save({ childId, localDate: day, body: text });
+        } else {
+          const existing = await dayNotes.getForDay(childId, day);
+          if (existing) await dayNotes.softDelete(existing.id);
+        }
+      } catch {
+        setSaveFailed(true);
+      }
+    },
+    [childId, dayNotes, day],
+  );
+
   const count = todayEvents.length;
   const typeCounts = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -158,6 +183,9 @@ export function useTapGrid(day: string) {
     count,
     typeCounts,
     todayEvents,
+    dayNote,
+    loadedDay,
+    saveDayNote,
     saveFailed,
     celebrating,
     endCelebration,
