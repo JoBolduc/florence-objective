@@ -22,6 +22,9 @@ export const strings = {
     counterText: (count: number, target: number) => `${count} / ${target}`,
     counter: (count: number, target: number) => `${count} signes sur ${target} aujourd’hui`,
     celebration: 'Bravo ! 10 signes aujourd’hui 🎉',
+    timelineTitle: 'Aujourd’hui, du plus récent au plus ancien',
+    unknownIcon: '❔',
+    timelineEmpty: 'Aucun signe enregistré pour le moment.',
     undo: 'Annuler',
     logged: (label: string) => `${label} enregistré`,
     logType: (label: string, count: number) =>

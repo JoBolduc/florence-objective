@@ -1,7 +1,7 @@
 import * as Haptics from 'expo-haptics';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { toLocalDate, useRepositories, type CommunicationTypeRecord } from '@/db';
+import { toLocalDate, useRepositories, type CommunicationTypeRecord, type EventRecord } from '@/db';
 
 import { DAILY_TARGET } from './daily-target';
 
@@ -23,8 +23,8 @@ export function useTapGrid() {
   const { children, communicationTypes, events } = useRepositories();
   const [types, setTypes] = useState<CommunicationTypeRecord[]>([]);
   const [childId, setChildId] = useState<string | null>(null);
-  const [count, setCount] = useState(0);
-  const [typeCounts, setTypeCounts] = useState<Record<string, number>>({});
+  // Today's live events, newest first. The counter, badges and timeline all derive from it.
+  const [todayEvents, setTodayEvents] = useState<EventRecord[]>([]);
   const [status, setStatus] = useState<Status>('loading');
   const [saveFailed, setSaveFailed] = useState(false);
   const [celebrating, setCelebrating] = useState(false);
@@ -33,42 +33,39 @@ export function useTapGrid() {
 
   // The day shown by the screen. E1-S8 handles the app staying open past midnight.
   const [day] = useState(() => toLocalDate(new Date()));
-  // Latest count, readable inside async callbacks. In memory only: reopening the
-  // app on a day already celebrated and undoing back to 9 could celebrate again.
-  const countRef = useRef(0);
+  // Latest events, readable inside async callbacks. The celebration flag is in memory
+  // only: reopening the app on a day already celebrated and undoing back to 9 could
+  // celebrate again.
+  const eventsRef = useRef<EventRecord[]>([]);
   const celebratedDay = useRef<string | null>(null);
 
-  /** Reloads both the daily count and the per-type badges from the database. */
-  const reloadCounts = useCallback(
+  const applyEvents = useCallback((list: EventRecord[]) => {
+    eventsRef.current = list;
+    setTodayEvents(list);
+  }, []);
+
+  /** Reloads today's events from the database: counts, badges and timeline follow. */
+  const reload = useCallback(
     async (forChildId: string) => {
-      const [total, perType] = await Promise.all([
-        events.countByDay(forChildId, day),
-        events.countsByType(forChildId, day),
-      ]);
-      countRef.current = total;
-      setCount(total);
-      setTypeCounts(perType);
+      applyEvents(await events.listByDay(forChildId, day));
     },
-    [events, day],
+    [events, day, applyEvents],
   );
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       const child = await children.getOrCreateFirst(DEFAULT_CHILD_NAME);
-      const [loadedTypes, total, perType] = await Promise.all([
+      const [loadedTypes, list] = await Promise.all([
         communicationTypes.list(),
-        events.countByDay(child.id, day),
-        events.countsByType(child.id, day),
+        events.listByDay(child.id, day),
       ]);
       if (cancelled) return;
-      countRef.current = total;
       // Today already reached the target before this launch: nothing to celebrate.
-      if (total >= DAILY_TARGET) celebratedDay.current = day;
+      if (list.length >= DAILY_TARGET) celebratedDay.current = day;
+      applyEvents(list);
       setTypes(loadedTypes);
       setChildId(child.id);
-      setCount(total);
-      setTypeCounts(perType);
       setStatus('ready');
     })().catch(() => {
       if (!cancelled) setStatus('loadFailed');
@@ -76,7 +73,7 @@ export function useTapGrid() {
     return () => {
       cancelled = true;
     };
-  }, [children, communicationTypes, events, day]);
+  }, [children, communicationTypes, events, day, applyEvents]);
 
   /** One tap = one event. Haptics fire first so feedback never waits on the database. */
   const log = useCallback(
@@ -88,11 +85,9 @@ export function useTapGrid() {
         .then((event) => {
           setSaveFailed(false);
           if (event.localDate !== day) return;
-          countRef.current += 1;
-          setCount(countRef.current);
-          setTypeCounts((prev) => ({ ...prev, [typeId]: (prev[typeId] ?? 0) + 1 }));
+          applyEvents([event, ...eventsRef.current]);
           setUndoable({ eventId: event.id, typeId });
-          if (countRef.current >= DAILY_TARGET && celebratedDay.current !== day) {
+          if (eventsRef.current.length >= DAILY_TARGET && celebratedDay.current !== day) {
             celebratedDay.current = day;
             setCelebrating(true);
             buzz(Haptics.AndroidHaptics.Confirm);
@@ -100,30 +95,38 @@ export function useTapGrid() {
         })
         .catch(() => setSaveFailed(true));
     },
-    [childId, events, day],
+    [childId, events, day, applyEvents],
   );
 
   const endCelebration = useCallback(() => setCelebrating(false), []);
 
   const dismissUndo = useCallback(() => setUndoable(null), []);
 
-  /** Removes the last logged event (soft delete) and reloads the counts. */
+  /** Removes the last logged event (soft delete) and reloads the events. */
   const undo = useCallback(async () => {
     if (!undoable || !childId) return;
     setUndoable(null);
     try {
       await events.softDelete(undoable.eventId);
-      await reloadCounts(childId);
+      await reload(childId);
     } catch {
       setSaveFailed(true);
     }
-  }, [undoable, childId, events, reloadCounts]);
+  }, [undoable, childId, events, reload]);
+
+  const count = todayEvents.length;
+  const typeCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const event of todayEvents) counts[event.typeId] = (counts[event.typeId] ?? 0) + 1;
+    return counts;
+  }, [todayEvents]);
 
   return {
     types,
     status,
     count,
     typeCounts,
+    todayEvents,
     saveFailed,
     celebrating,
     endCelebration,

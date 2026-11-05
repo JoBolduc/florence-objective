@@ -3,10 +3,11 @@ import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import type { CommunicationTypeRecord } from '@/db';
 import { AppText } from '@/ui/app-text';
 import { strings } from '@/ui/strings';
-import { colors, radii, spacing } from '@/ui/theme';
+import { colors, minTouchTarget, radii, spacing } from '@/ui/theme';
 
 import { Celebration } from './celebration';
 import { DailyCounter } from './daily-counter';
+import { Timeline } from './timeline';
 import { UndoSnackbar } from './undo-snackbar';
 import { useTapGrid } from './use-tap-grid';
 
@@ -49,6 +50,7 @@ export function TapGrid() {
     status,
     count,
     typeCounts,
+    todayEvents,
     saveFailed,
     celebrating,
     endCelebration,
@@ -86,6 +88,7 @@ export function TapGrid() {
             />
           ))}
         </View>
+        <Timeline events={todayEvents} types={types} />
       </ScrollView>
       {undoable && (
         <UndoSnackbar
@@ -106,6 +109,8 @@ const styles = StyleSheet.create({
   content: {
     gap: spacing.md,
     padding: spacing.md,
+    // Room to scroll the last timeline rows clear of the undo snackbar.
+    paddingBottom: 2 * minTouchTarget,
   },
   reminder: {
     textAlign: 'center',
