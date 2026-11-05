@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 
 import type { CommunicationTypeRecord } from '@/db';
+import { useSync } from '@/features/sync/sync-provider';
 import { AppText } from '@/ui/app-text';
 import { strings } from '@/ui/strings';
 import { colors, minTouchTarget, radii, spacing } from '@/ui/theme';
@@ -76,6 +77,7 @@ export function TapGrid({ day }: { day: string }) {
   const [sheet, setSheet] = useState<{ id: string; focusNote: boolean } | null>(null);
   // The "which word?" sheet, opened by the Mot tile instead of logging straight away.
   const [wordSheetOpen, setWordSheetOpen] = useState(false);
+  const { enabled: syncEnabled, state: syncState, syncNow } = useSync();
 
   if (status === 'loading') return <AppText color="textMuted">{strings.today.loading}</AppText>;
   if (status === 'loadFailed') return <AppText color="danger">{strings.today.loadFailed}</AppText>;
@@ -85,7 +87,14 @@ export function TapGrid({ day }: { day: string }) {
 
   return (
     <View style={styles.root}>
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        refreshControl={
+          syncEnabled ? (
+            <RefreshControl refreshing={syncState.status === 'syncing'} onRefresh={syncNow} />
+          ) : undefined
+        }
+      >
         <DailyCounter count={count} />
         {celebrating && <Celebration onDone={endCelebration} />}
         <AppText color="textMuted" style={styles.reminder}>

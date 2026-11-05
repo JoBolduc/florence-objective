@@ -1,11 +1,10 @@
 import { useSQLiteContext } from 'expo-sqlite';
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { StyleSheet, TextInput, View } from 'react-native';
 
 import { supabase } from '@/features/account/supabase';
 import { DEFAULT_CHILD_NAME } from '@/features/communication/use-tap-grid';
-import { createSyncEngine } from '@/features/sync/engine';
-import { createSupabaseRemote } from '@/features/sync/supabase-remote';
+import { useSync } from '@/features/sync/sync-provider';
 import { useRepositories } from '@/db';
 import { AppText } from '@/ui/app-text';
 import { Button } from '@/ui/button';
@@ -27,6 +26,7 @@ type State = 'loading' | 'none' | 'member' | 'loadFailed';
 export function HouseholdSection() {
   const db = useSQLiteContext();
   const { children } = useRepositories();
+  const { attachHousehold } = useSync();
   const [state, setState] = useState<State>('loading');
   const [householdId, setHousehold] = useState<string | null>(null);
   const [inviteCode, setInviteCode] = useState<string | null>(null);
@@ -53,19 +53,6 @@ export function HouseholdSection() {
     };
   }, [db]);
 
-  /** First sync after joining or creating: uploads local rows, downloads the partner's. */
-  const syncNow = useCallback(
-    async (id: string) => {
-      if (!supabase) return;
-      try {
-        await createSyncEngine(db, createSupabaseRemote(supabase, id)).sync();
-      } catch {
-        // Offline: the rows stay pending and go out on the next sync.
-      }
-    },
-    [db],
-  );
-
   async function create() {
     if (!supabase) return;
     setBusy(true);
@@ -76,7 +63,7 @@ export function HouseholdSection() {
       await setHouseholdId(db, id);
       setHousehold(id);
       setState('member');
-      await syncNow(id);
+      attachHousehold(id);
     } catch {
       setMessage(strings.household.createFailed);
     }
@@ -102,7 +89,7 @@ export function HouseholdSection() {
         await setHouseholdId(db, result.householdId);
         setHousehold(result.householdId);
         setState('member');
-        await syncNow(result.householdId);
+        attachHousehold(result.householdId);
       }
     } catch {
       setMessage(strings.household.joinFailed);

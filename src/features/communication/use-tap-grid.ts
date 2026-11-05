@@ -2,6 +2,7 @@ import * as Haptics from 'expo-haptics';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useRepositories, type CommunicationTypeRecord, type EventRecord } from '@/db';
+import { useSync } from '@/features/sync/sync-provider';
 
 import { DAILY_TARGET } from './daily-target';
 
@@ -25,6 +26,9 @@ const countedIn = (list: EventRecord[]) => list.filter((e) => e.counts).length;
 /** `day` is the local date being shown (YYYY-MM-DD); a new value reloads the screen for that day. */
 export function useTapGrid(day: string) {
   const { children, communicationTypes, events, dayNotes } = useRepositories();
+  const { state: syncState, noteWrite } = useSync();
+  // Bumps when a sync brought in the partner's changes: reload what is shown.
+  const syncRevision = syncState.revision;
   const [types, setTypes] = useState<CommunicationTypeRecord[]>([]);
   const [childId, setChildId] = useState<string | null>(null);
   // Today's live events, newest first. The counter, badges and timeline all derive from it.
@@ -86,7 +90,7 @@ export function useTapGrid(day: string) {
     return () => {
       cancelled = true;
     };
-  }, [children, communicationTypes, events, dayNotes, day, applyEvents]);
+  }, [children, communicationTypes, events, dayNotes, day, applyEvents, syncRevision]);
 
   /** One tap = one event. Haptics fire first so feedback never waits on the database. */
   const log = useCallback(
@@ -98,6 +102,7 @@ export function useTapGrid(day: string) {
       buzz(Haptics.AndroidHaptics.Virtual_Key);
       try {
         const event = await events.insert({ childId, typeId, ...extra });
+        noteWrite();
         setSaveFailed(false);
         if (event.localDate !== day) return event;
         applyEvents([event, ...eventsRef.current]);
@@ -113,7 +118,7 @@ export function useTapGrid(day: string) {
         return null;
       }
     },
-    [childId, events, day, applyEvents],
+    [childId, events, day, applyEvents, noteWrite],
   );
 
   /** Saves the edited fields of an event (note, type, time) and reloads the events. */
@@ -125,12 +130,13 @@ export function useTapGrid(day: string) {
       if (!childId) return;
       try {
         await events.update(eventId, changes);
+        noteWrite();
         await reload(childId);
       } catch {
         setSaveFailed(true);
       }
     },
-    [childId, events, reload],
+    [childId, events, reload, noteWrite],
   );
 
   /** Soft-deletes an event (the row is kept for sync) and reloads the events. */
@@ -140,12 +146,13 @@ export function useTapGrid(day: string) {
       setUndoable((current) => (current?.eventId === eventId ? null : current));
       try {
         await events.softDelete(eventId);
+        noteWrite();
         await reload(childId);
       } catch {
         setSaveFailed(true);
       }
     },
-    [childId, events, reload],
+    [childId, events, reload, noteWrite],
   );
 
   const endCelebration = useCallback(() => setCelebrating(false), []);
@@ -158,11 +165,12 @@ export function useTapGrid(day: string) {
     setUndoable(null);
     try {
       await events.softDelete(undoable.eventId);
+      noteWrite();
       await reload(childId);
     } catch {
       setSaveFailed(true);
     }
-  }, [undoable, childId, events, reload]);
+  }, [undoable, childId, events, reload, noteWrite]);
 
   /** Saves the day's note; clearing the text removes the note (soft delete). */
   const saveDayNote = useCallback(
@@ -176,11 +184,12 @@ export function useTapGrid(day: string) {
           const existing = await dayNotes.getForDay(childId, day);
           if (existing) await dayNotes.softDelete(existing.id);
         }
+        noteWrite();
       } catch {
         setSaveFailed(true);
       }
     },
-    [childId, dayNotes, day],
+    [childId, dayNotes, day, noteWrite],
   );
 
   const count = countedIn(todayEvents);
