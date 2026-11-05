@@ -5,6 +5,7 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
+  Switch,
   TextInput,
   View,
 } from 'react-native';
@@ -17,11 +18,13 @@ import { strings } from '@/ui/strings';
 import { colors, minTouchTarget, radii, spacing, typography } from '@/ui/theme';
 
 import { shiftWithinDay } from './adjust-time';
+import { WORD_TYPE_ID } from './word-type';
 
 export interface EventChanges {
   typeId: string;
   occurredAt: Date;
   note: string | null;
+  counts: boolean;
 }
 
 const TIME_STEPS = [
@@ -52,6 +55,19 @@ export function EventSheet({
   const [typeId, setTypeId] = useState(event.typeId);
   const [occurredAt, setOccurredAt] = useState(() => new Date(event.occurredAt));
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [counts, setCounts] = useState(event.counts);
+  const [wordMissing, setWordMissing] = useState(false);
+  const isWord = typeId === WORD_TYPE_ID;
+
+  const save = () => {
+    const trimmed = note.trim();
+    if (isWord && !trimmed) {
+      setWordMissing(true);
+      return;
+    }
+    // Only a word can be left out of the counter; every other type always counts.
+    onSave({ typeId, occurredAt, note: trimmed || null, counts: isWord ? counts : true });
+  };
 
   return (
     <Modal transparent animationType="slide" onRequestClose={onClose}>
@@ -104,23 +120,42 @@ export function EventSheet({
               ))}
             </View>
 
-            <AppText variant="label">{strings.sheet.noteLabel}</AppText>
+            <AppText variant="label">
+              {isWord ? strings.sheet.wordLabel : strings.sheet.noteLabel}
+            </AppText>
             <TextInput
-              accessibilityLabel={strings.sheet.noteLabel}
+              accessibilityLabel={isWord ? strings.sheet.wordLabel : strings.sheet.noteLabel}
               multiline
               autoFocus={focusNote}
               value={note}
-              onChangeText={setNote}
-              placeholder={strings.sheet.notePlaceholder}
+              onChangeText={(text) => {
+                setNote(text);
+                if (text.trim()) setWordMissing(false);
+              }}
+              placeholder={isWord ? strings.word.placeholder : strings.sheet.notePlaceholder}
               placeholderTextColor={colors.textMuted}
               style={styles.input}
             />
+            {isWord && wordMissing && (
+              <AppText color="danger" accessibilityLiveRegion="polite">
+                {strings.sheet.wordRequired}
+              </AppText>
+            )}
+            {isWord && (
+              <View style={styles.switchRow}>
+                <AppText variant="label" style={styles.switchText}>
+                  {strings.word.countsLabel}
+                </AppText>
+                <Switch
+                  accessibilityLabel={strings.word.countsLabel}
+                  value={counts}
+                  onValueChange={setCounts}
+                />
+              </View>
+            )}
 
             <View style={styles.wrap}>
-              <Button
-                label={strings.sheet.save}
-                onPress={() => onSave({ typeId, occurredAt, note: note.trim() || null })}
-              />
+              <Button label={strings.sheet.save} onPress={save} />
               <Button label={strings.sheet.cancel} variant="secondary" onPress={onClose} />
             </View>
 
@@ -199,5 +234,13 @@ const styles = StyleSheet.create({
   },
   confirm: {
     gap: spacing.sm,
+  },
+  switchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  switchText: {
+    flex: 1,
   },
 });

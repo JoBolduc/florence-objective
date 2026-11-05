@@ -19,6 +19,9 @@ function buzz(type: (typeof Haptics.AndroidHaptics)[keyof typeof Haptics.Android
   }
 }
 
+/** Events that count toward the daily target (an off-context word does not). */
+const countedIn = (list: EventRecord[]) => list.filter((e) => e.counts).length;
+
 /** `day` is the local date being shown (YYYY-MM-DD); a new value reloads the screen for that day. */
 export function useTapGrid(day: string) {
   const { children, communicationTypes, events, dayNotes } = useRepositories();
@@ -69,7 +72,7 @@ export function useTapGrid(day: string) {
       ]);
       if (cancelled) return;
       // Today already reached the target before this launch: nothing to celebrate.
-      if (list.length >= DAILY_TARGET) celebratedDay.current = day;
+      if (countedIn(list) >= DAILY_TARGET) celebratedDay.current = day;
       applyEvents(list);
       setUndoable(null);
       setDayNote(note?.body ?? '');
@@ -87,16 +90,19 @@ export function useTapGrid(day: string) {
 
   /** One tap = one event. Haptics fire first so feedback never waits on the database. */
   const log = useCallback(
-    async (typeId: string): Promise<EventRecord | null> => {
+    async (
+      typeId: string,
+      extra?: { note: string; counts: boolean },
+    ): Promise<EventRecord | null> => {
       if (!childId) return null;
       buzz(Haptics.AndroidHaptics.Virtual_Key);
       try {
-        const event = await events.insert({ childId, typeId });
+        const event = await events.insert({ childId, typeId, ...extra });
         setSaveFailed(false);
         if (event.localDate !== day) return event;
         applyEvents([event, ...eventsRef.current]);
         setUndoable({ eventId: event.id, typeId });
-        if (eventsRef.current.length >= DAILY_TARGET && celebratedDay.current !== day) {
+        if (countedIn(eventsRef.current) >= DAILY_TARGET && celebratedDay.current !== day) {
           celebratedDay.current = day;
           setCelebrating(true);
           buzz(Haptics.AndroidHaptics.Confirm);
@@ -112,7 +118,10 @@ export function useTapGrid(day: string) {
 
   /** Saves the edited fields of an event (note, type, time) and reloads the events. */
   const saveEvent = useCallback(
-    async (eventId: string, changes: { typeId: string; occurredAt: Date; note: string | null }) => {
+    async (
+      eventId: string,
+      changes: { typeId: string; occurredAt: Date; note: string | null; counts: boolean },
+    ) => {
       if (!childId) return;
       try {
         await events.update(eventId, changes);
@@ -174,7 +183,7 @@ export function useTapGrid(day: string) {
     [childId, dayNotes, day],
   );
 
-  const count = todayEvents.length;
+  const count = countedIn(todayEvents);
   const typeCounts = useMemo(() => {
     const counts: Record<string, number> = {};
     for (const event of todayEvents) counts[event.typeId] = (counts[event.typeId] ?? 0) + 1;

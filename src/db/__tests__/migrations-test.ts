@@ -33,7 +33,7 @@ describe('migrate', () => {
     expect(await migrate(db)).toBe(LATEST);
   });
 
-  it('seeds the seven communication types in the specialists’ order', async () => {
+  it('seeds the nine communication types in the specialists’ order', async () => {
     const db = openTestDatabase();
     await migrate(db);
 
@@ -47,8 +47,10 @@ describe('migrate', () => {
       ['aider', 'Aider', '🤝', 5],
       ['attendre', 'Attendre', '⏳', 6],
       ['manger', 'Manger', '🍽️', 7],
+      ['pointer', 'Pointer', '👉', 8],
+      ['mot', 'Mot', '💬', 9],
     ]);
-    expect(new Set(types.map((t) => t.icon)).size).toBe(7);
+    expect(new Set(types.map((t) => t.icon)).size).toBe(9);
   });
 
   it('adds the communication types to a v1 database without touching its data', async () => {
@@ -56,16 +58,21 @@ describe('migrate', () => {
     await migrate(db, MIGRATIONS.slice(0, 1));
     const { deps } = testDeps();
     const child = await createChildRepository(db, deps).insert({ name: 'Florence' });
-    const event = await createEventRepository(db, deps).insert({
-      childId: child.id,
-      typeId: 'encore',
-    });
+    // Raw v1 insert: the repository now writes columns a v1 schema does not have.
+    const event = { id: 'e1' };
+    await db.runAsync(
+      `INSERT INTO event (id, child_id, type_id, occurred_at, local_date, created_at, updated_at)
+       VALUES (?, ?, 'encore', '2026-11-02T14:00:00.000Z', '2026-11-02',
+               '2026-11-02T14:00:00.000Z', '2026-11-02T14:00:00.000Z')`,
+      [event.id, child.id],
+    );
 
     expect(await migrate(db)).toBe(LATEST);
 
-    expect(await createCommunicationTypeRepository(db).list()).toHaveLength(7);
+    expect(await createCommunicationTypeRepository(db).list()).toHaveLength(9);
     expect(await createEventRepository(db, deps).getById(event.id)).toMatchObject({
       typeId: 'encore',
+      counts: true,
     });
   });
 

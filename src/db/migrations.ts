@@ -84,10 +84,24 @@ INSERT INTO communication_type (id, label, icon, sort_order, created_at, updated
 /** Drops the temporary E0-S2 update-check counter, which lived outside the migrations. */
 const SCHEMA_V3 = `DROP TABLE IF EXISTS update_check;`;
 
+/**
+ * E1-S10: two more communication types (pointing, spoken word) and a per-event flag
+ * saying whether the event counts toward the daily target. Existing events count.
+ * A spoken word only counts when it communicates something in context; the parent decides.
+ */
+const SCHEMA_V4 = `
+ALTER TABLE event ADD COLUMN counts INTEGER NOT NULL DEFAULT 1;
+
+INSERT INTO communication_type (id, label, icon, sort_order, created_at, updated_at) VALUES
+  ('pointer', 'Pointer', '👉', 8, '2026-11-05T00:00:00.000Z', '2026-11-05T00:00:00.000Z'),
+  ('mot',     'Mot',     '💬', 9, '2026-11-05T00:00:00.000Z', '2026-11-05T00:00:00.000Z');
+`;
+
 export const MIGRATIONS: readonly Migration[] = [
   { version: 1, up: SCHEMA_V1 },
   { version: 2, up: SCHEMA_V2 },
   { version: 3, up: SCHEMA_V3 },
+  { version: 4, up: SCHEMA_V4 },
 ];
 
 export async function getSchemaVersion(db: SqlDatabase): Promise<number> {

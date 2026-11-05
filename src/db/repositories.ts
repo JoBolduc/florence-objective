@@ -21,6 +21,8 @@ export interface EventRecord extends SyncColumns {
   /** Local calendar day the event belongs to (YYYY-MM-DD). */
   localDate: string;
   note: string | null;
+  /** Whether the event counts toward the daily target (false for an off-context word). */
+  counts: boolean;
 }
 
 export interface DayNoteRecord extends SyncColumns {
@@ -42,7 +44,10 @@ const SYNC_SELECT = `id, created_at AS createdAt, updated_at AS updatedAt,
 
 const CHILD_SELECT = `SELECT ${SYNC_SELECT}, name FROM child`;
 const EVENT_SELECT = `SELECT ${SYNC_SELECT}, child_id AS childId, type_id AS typeId,
-  occurred_at AS occurredAt, local_date AS localDate, note FROM event`;
+  occurred_at AS occurredAt, local_date AS localDate, note, counts FROM event`;
+
+type EventRow = Omit<EventRecord, 'counts'> & { counts: number };
+const toEvent = (row: EventRow): EventRecord => ({ ...row, counts: row.counts !== 0 });
 const DAY_NOTE_SELECT = `SELECT ${SYNC_SELECT}, child_id AS childId, local_date AS localDate,
   body FROM day_note`;
 
@@ -100,8 +105,13 @@ export function createChildRepository(db: SqlDatabase, deps: RepositoryDeps = de
 }
 
 export function createEventRepository(db: SqlDatabase, deps: RepositoryDeps = defaultDeps) {
-  const getById = (id: string) =>
-    db.getFirstAsync<EventRecord>(`${EVENT_SELECT} WHERE id = ? AND deleted_at IS NULL`, [id]);
+  const getById = async (id: string) => {
+    const row = await db.getFirstAsync<EventRow>(
+      `${EVENT_SELECT} WHERE id = ? AND deleted_at IS NULL`,
+      [id],
+    );
+    return row ? toEvent(row) : null;
+  };
 
   return {
     getById,
@@ -111,6 +121,7 @@ export function createEventRepository(db: SqlDatabase, deps: RepositoryDeps = de
       typeId: string;
       occurredAt?: Date;
       note?: string | null;
+      counts?: boolean;
       loggedBy?: string | null;
     }): Promise<EventRecord> {
       const now = deps.now();
@@ -122,15 +133,16 @@ export function createEventRepository(db: SqlDatabase, deps: RepositoryDeps = de
         occurredAt: occurred.toISOString(),
         localDate: toLocalDate(occurred),
         note: input.note ?? null,
+        counts: input.counts ?? true,
         createdAt: now.toISOString(),
         updatedAt: now.toISOString(),
         deletedAt: null,
         loggedBy: input.loggedBy ?? null,
       };
       await db.runAsync(
-        `INSERT INTO event (id, child_id, type_id, occurred_at, local_date, note,
+        `INSERT INTO event (id, child_id, type_id, occurred_at, local_date, note, counts,
            created_at, updated_at, deleted_at, logged_by)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           record.id,
           record.childId,
@@ -138,6 +150,7 @@ export function createEventRepository(db: SqlDatabase, deps: RepositoryDeps = de
           record.occurredAt,
           record.localDate,
           record.note,
+          record.counts ? 1 : 0,
           record.createdAt,
           record.updatedAt,
           null,
@@ -147,11 +160,11 @@ export function createEventRepository(db: SqlDatabase, deps: RepositoryDeps = de
       return record;
     },
 
-    /** Number of live events on one local day. */
+    /** Number of live events on one local day that count toward the daily target. */
     async countByDay(childId: string, localDate: string): Promise<number> {
       const row = await db.getFirstAsync<{ total: number }>(
         `SELECT COUNT(*) AS total FROM event
-         WHERE child_id = ? AND local_date = ? AND deleted_at IS NULL`,
+         WHERE child_id = ? AND local_date = ? AND deleted_at IS NULL AND counts = 1`,
         [childId, localDate],
       );
       return row?.total ?? 0;
@@ -169,18 +182,19 @@ export function createEventRepository(db: SqlDatabase, deps: RepositoryDeps = de
     },
 
     /** Live events of one local day, newest first. */
-    listByDay(childId: string, localDate: string): Promise<EventRecord[]> {
-      return db.getAllAsync<EventRecord>(
+    async listByDay(childId: string, localDate: string): Promise<EventRecord[]> {
+      const rows = await db.getAllAsync<EventRow>(
         `${EVENT_SELECT} WHERE child_id = ? AND local_date = ? AND deleted_at IS NULL
          ORDER BY occurred_at DESC`,
         [childId, localDate],
       );
+      return rows.map(toEvent);
     },
 
     /** Returns the updated event, or null if it does not exist or was deleted. */
     async update(
       id: string,
-      patch: { typeId?: string; occurredAt?: Date; note?: string | null },
+      patch: { typeId?: string; occurredAt?: Date; note?: string | null; counts?: boolean },
     ): Promise<EventRecord | null> {
       const sets: string[] = [];
       const params: (string | null)[] = [];
@@ -195,6 +209,10 @@ export function createEventRepository(db: SqlDatabase, deps: RepositoryDeps = de
       if (patch.note !== undefined) {
         sets.push('note = ?');
         params.push(patch.note);
+      }
+      if (patch.counts !== undefined) {
+        sets.push('counts = ?');
+        params.push(patch.counts ? '1' : '0');
       }
       sets.push('updated_at = ?');
       params.push(deps.now().toISOString());

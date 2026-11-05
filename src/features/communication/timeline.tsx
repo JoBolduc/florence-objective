@@ -38,6 +38,11 @@ export function Timeline({
             <AppText variant="label">{type?.icon ?? strings.today.unknownIcon}</AppText>
             <View style={styles.text}>
               <AppText variant="label">{type?.label ?? event.typeId}</AppText>
+              {!event.counts && (
+                <AppText variant="caption" color="textMuted">
+                  {strings.today.notCounted}
+                </AppText>
+              )}
               {event.note ? (
                 <AppText color="textMuted" numberOfLines={1}>
                   {event.note}

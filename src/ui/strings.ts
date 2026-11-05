@@ -32,6 +32,16 @@ export const strings = {
     save: 'Enregistrer',
     cancel: 'Annuler',
     close: 'Fermer',
+    wordLabel: 'Mot',
+    wordRequired: 'Indiquez le mot dit.',
+  },
+  word: {
+    title: 'Quel mot a-t-elle dit ?',
+    placeholder: 'Ex. : lait',
+    countsLabel: 'Compter dans l’objectif',
+    countsHint: 'À activer si le mot est lié au contexte (ex. « lait » au repas).',
+    add: 'Ajouter',
+    required: 'Indiquez le mot pour l’ajouter.',
   },
   today: {
     reminder: 'Un appui par séquence. Seulement les signes spontanés.',
@@ -45,6 +55,7 @@ export const strings = {
     unknownIcon: '❔',
     timelineEmpty: 'Aucun signe enregistré pour le moment.',
     openEvent: (label: string) => `Modifier : ${label}`,
+    notCounted: 'Non compté',
     undo: 'Annuler',
     logged: (label: string) => `${label} enregistré`,
     logType: (label: string, count: number) =>

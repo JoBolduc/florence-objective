@@ -13,6 +13,8 @@ import { EventSheet } from './event-sheet';
 import { Timeline } from './timeline';
 import { UndoSnackbar } from './undo-snackbar';
 import { useTapGrid } from './use-tap-grid';
+import { WordSheet } from './word-sheet';
+import { WORD_TYPE_ID } from './word-type';
 
 const TILE_MIN_HEIGHT = 128;
 
@@ -72,6 +74,8 @@ export function TapGrid({ day }: { day: string }) {
   } = useTapGrid(day);
   // The event whose sheet is open (note, type, time, deletion).
   const [sheet, setSheet] = useState<{ id: string; focusNote: boolean } | null>(null);
+  // The "which word?" sheet, opened by the Mot tile instead of logging straight away.
+  const [wordSheetOpen, setWordSheetOpen] = useState(false);
 
   if (status === 'loading') return <AppText color="textMuted">{strings.today.loading}</AppText>;
   if (status === 'loadFailed') return <AppText color="danger">{strings.today.loadFailed}</AppText>;
@@ -98,8 +102,12 @@ export function TapGrid({ day }: { day: string }) {
               key={type.id}
               type={type}
               count={typeCounts[type.id] ?? 0}
-              onPress={() => log(type.id)}
+              onPress={() => (type.id === WORD_TYPE_ID ? setWordSheetOpen(true) : log(type.id))}
               onLongPress={() => {
+                if (type.id === WORD_TYPE_ID) {
+                  setWordSheetOpen(true);
+                  return;
+                }
                 // Logs exactly one event, then offers to describe it.
                 log(type.id).then((event) => event && setSheet({ id: event.id, focusNote: true }));
               }}
@@ -128,6 +136,15 @@ export function TapGrid({ day }: { day: string }) {
             setSheet(null);
           }}
           onClose={() => setSheet(null)}
+        />
+      )}
+      {wordSheetOpen && (
+        <WordSheet
+          onSubmit={(word, counts) => {
+            setWordSheetOpen(false);
+            log(WORD_TYPE_ID, { note: word, counts });
+          }}
+          onClose={() => setWordSheetOpen(false)}
         />
       )}
       {undoable && (

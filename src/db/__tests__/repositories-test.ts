@@ -95,6 +95,30 @@ describe('event repository', () => {
     });
   });
 
+  it('counts events by default, and a word marked as not counting stays out of the day count', async () => {
+    const { events, child } = await setup();
+    const at = new Date(2026, 10, 2, 9);
+    await events.insert({ childId: child.id, typeId: 'encore', occurredAt: at });
+    const word = await events.insert({
+      childId: child.id,
+      typeId: 'mot',
+      note: 'lait',
+      counts: false,
+      occurredAt: at,
+    });
+
+    expect(word.counts).toBe(false);
+    expect(await events.countByDay(child.id, '2026-11-02')).toBe(1);
+    expect((await events.listByDay(child.id, '2026-11-02')).map((e) => e.counts).sort()).toEqual([
+      false,
+      true,
+    ]);
+
+    const updated = await events.update(word.id, { counts: true });
+    expect(updated).toMatchObject({ counts: true, note: 'lait' });
+    expect(await events.countByDay(child.id, '2026-11-02')).toBe(2);
+  });
+
   it('clears a note with null', async () => {
     const { events, child } = await setup();
     const event = await events.insert({ childId: child.id, typeId: 'a', note: 'x' });
