@@ -14,6 +14,13 @@ export const strings = {
     message: 'Cette page n’existe pas.',
     backHome: 'Retour à l’accueil',
   },
+  sheet: {
+    noteLabel: 'Note',
+    notePlaceholder: 'Ex. : a pointé le chien puis m’a regardé',
+    save: 'Enregistrer',
+    cancel: 'Annuler',
+    close: 'Fermer',
+  },
   today: {
     reminder: 'Un appui par séquence. Seulement les signes spontanés.',
     loading: 'Chargement…',
@@ -25,6 +32,7 @@ export const strings = {
     timelineTitle: 'Aujourd’hui, du plus récent au plus ancien',
     unknownIcon: '❔',
     timelineEmpty: 'Aucun signe enregistré pour le moment.',
+    openEvent: (label: string) => `Modifier : ${label}`,
     undo: 'Annuler',
     logged: (label: string) => `${label} enregistré`,
     logType: (label: string, count: number) =>

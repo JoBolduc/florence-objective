@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import type { CommunicationTypeRecord } from '@/db';
@@ -7,6 +8,7 @@ import { colors, minTouchTarget, radii, spacing } from '@/ui/theme';
 
 import { Celebration } from './celebration';
 import { DailyCounter } from './daily-counter';
+import { EventSheet } from './event-sheet';
 import { Timeline } from './timeline';
 import { UndoSnackbar } from './undo-snackbar';
 import { useTapGrid } from './use-tap-grid';
@@ -17,16 +19,19 @@ function Tile({
   type,
   count,
   onPress,
+  onLongPress,
 }: {
   type: CommunicationTypeRecord;
   count: number;
   onPress: () => void;
+  onLongPress: () => void;
 }) {
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={strings.today.logType(type.label, count)}
       onPress={onPress}
+      onLongPress={onLongPress}
       style={({ pressed }) => [styles.tile, pressed && styles.tilePressed]}
     >
       <AppText variant="display" style={styles.icon}>
@@ -55,14 +60,18 @@ export function TapGrid() {
     celebrating,
     endCelebration,
     log,
+    saveNote,
     undoable,
     undo,
     dismissUndo,
   } = useTapGrid();
+  // The event whose sheet is open (note editing).
+  const [sheetEventId, setSheetEventId] = useState<string | null>(null);
 
   if (status === 'loading') return <AppText color="textMuted">{strings.today.loading}</AppText>;
   if (status === 'loadFailed') return <AppText color="danger">{strings.today.loadFailed}</AppText>;
 
+  const sheetEvent = todayEvents.find((e) => e.id === sheetEventId);
   const undoLabel = types.find((t) => t.id === undoable?.typeId)?.label ?? '';
 
   return (
@@ -85,11 +94,31 @@ export function TapGrid() {
               type={type}
               count={typeCounts[type.id] ?? 0}
               onPress={() => log(type.id)}
+              onLongPress={() => {
+                // Logs exactly one event, then offers to describe it.
+                log(type.id).then((event) => event && setSheetEventId(event.id));
+              }}
             />
           ))}
         </View>
-        <Timeline events={todayEvents} types={types} />
+        <Timeline
+          events={todayEvents}
+          types={types}
+          onSelect={(event) => setSheetEventId(event.id)}
+        />
       </ScrollView>
+      {sheetEvent && (
+        <EventSheet
+          key={sheetEvent.id}
+          event={sheetEvent}
+          type={types.find((t) => t.id === sheetEvent.typeId)}
+          onSave={(changes) => {
+            saveNote(sheetEvent.id, changes.note);
+            setSheetEventId(null);
+          }}
+          onClose={() => setSheetEventId(null)}
+        />
+      )}
       {undoable && (
         <UndoSnackbar
           key={undoable.eventId}

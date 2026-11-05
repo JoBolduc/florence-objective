@@ -77,25 +77,41 @@ export function useTapGrid() {
 
   /** One tap = one event. Haptics fire first so feedback never waits on the database. */
   const log = useCallback(
-    (typeId: string) => {
-      if (!childId) return;
+    async (typeId: string): Promise<EventRecord | null> => {
+      if (!childId) return null;
       buzz(Haptics.AndroidHaptics.Virtual_Key);
-      events
-        .insert({ childId, typeId })
-        .then((event) => {
-          setSaveFailed(false);
-          if (event.localDate !== day) return;
-          applyEvents([event, ...eventsRef.current]);
-          setUndoable({ eventId: event.id, typeId });
-          if (eventsRef.current.length >= DAILY_TARGET && celebratedDay.current !== day) {
-            celebratedDay.current = day;
-            setCelebrating(true);
-            buzz(Haptics.AndroidHaptics.Confirm);
-          }
-        })
-        .catch(() => setSaveFailed(true));
+      try {
+        const event = await events.insert({ childId, typeId });
+        setSaveFailed(false);
+        if (event.localDate !== day) return event;
+        applyEvents([event, ...eventsRef.current]);
+        setUndoable({ eventId: event.id, typeId });
+        if (eventsRef.current.length >= DAILY_TARGET && celebratedDay.current !== day) {
+          celebratedDay.current = day;
+          setCelebrating(true);
+          buzz(Haptics.AndroidHaptics.Confirm);
+        }
+        return event;
+      } catch {
+        setSaveFailed(true);
+        return null;
+      }
     },
     [childId, events, day, applyEvents],
+  );
+
+  /** Sets or clears (null) an event's note. */
+  const saveNote = useCallback(
+    async (eventId: string, note: string | null) => {
+      if (!childId) return;
+      try {
+        await events.update(eventId, { note });
+        await reload(childId);
+      } catch {
+        setSaveFailed(true);
+      }
+    },
+    [childId, events, reload],
   );
 
   const endCelebration = useCallback(() => setCelebrating(false), []);
@@ -131,6 +147,7 @@ export function useTapGrid() {
     celebrating,
     endCelebration,
     log,
+    saveNote,
     undoable,
     undo,
     dismissUndo,

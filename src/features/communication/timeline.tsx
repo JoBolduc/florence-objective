@@ -1,4 +1,4 @@
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import type { CommunicationTypeRecord, EventRecord } from '@/db';
 import { AppText } from '@/ui/app-text';
@@ -10,9 +10,11 @@ import { colors, radii, spacing } from '@/ui/theme';
 export function Timeline({
   events,
   types,
+  onSelect,
 }: {
   events: EventRecord[];
   types: CommunicationTypeRecord[];
+  onSelect: (event: EventRecord) => void;
 }) {
   const typeById = new Map(types.map((t) => [t.id, t]));
 
@@ -25,7 +27,13 @@ export function Timeline({
       {events.map((event) => {
         const type = typeById.get(event.typeId);
         return (
-          <View key={event.id} style={styles.row}>
+          <Pressable
+            key={event.id}
+            accessibilityRole="button"
+            accessibilityLabel={strings.today.openEvent(type?.label ?? event.typeId)}
+            onPress={() => onSelect(event)}
+            style={styles.row}
+          >
             <AppText color="textMuted">{formatTime(new Date(event.occurredAt))}</AppText>
             <AppText variant="label">{type?.icon ?? strings.today.unknownIcon}</AppText>
             <View style={styles.text}>
@@ -36,7 +44,7 @@ export function Timeline({
                 </AppText>
               ) : null}
             </View>
-          </View>
+          </Pressable>
         );
       })}
     </View>
