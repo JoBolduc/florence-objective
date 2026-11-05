@@ -28,6 +28,8 @@ export function useTapGrid() {
   const [status, setStatus] = useState<Status>('loading');
   const [saveFailed, setSaveFailed] = useState(false);
   const [celebrating, setCelebrating] = useState(false);
+  // The event the snackbar offers to undo. A new tap replaces it.
+  const [undoable, setUndoable] = useState<{ eventId: string; typeId: string } | null>(null);
 
   // The day shown by the screen. E1-S8 handles the app staying open past midnight.
   const [day] = useState(() => toLocalDate(new Date()));
@@ -35,6 +37,20 @@ export function useTapGrid() {
   // app on a day already celebrated and undoing back to 9 could celebrate again.
   const countRef = useRef(0);
   const celebratedDay = useRef<string | null>(null);
+
+  /** Reloads both the daily count and the per-type badges from the database. */
+  const reloadCounts = useCallback(
+    async (forChildId: string) => {
+      const [total, perType] = await Promise.all([
+        events.countByDay(forChildId, day),
+        events.countsByType(forChildId, day),
+      ]);
+      countRef.current = total;
+      setCount(total);
+      setTypeCounts(perType);
+    },
+    [events, day],
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -75,6 +91,7 @@ export function useTapGrid() {
           countRef.current += 1;
           setCount(countRef.current);
           setTypeCounts((prev) => ({ ...prev, [typeId]: (prev[typeId] ?? 0) + 1 }));
+          setUndoable({ eventId: event.id, typeId });
           if (countRef.current >= DAILY_TARGET && celebratedDay.current !== day) {
             celebratedDay.current = day;
             setCelebrating(true);
@@ -88,5 +105,31 @@ export function useTapGrid() {
 
   const endCelebration = useCallback(() => setCelebrating(false), []);
 
-  return { types, status, count, typeCounts, saveFailed, celebrating, endCelebration, log };
+  const dismissUndo = useCallback(() => setUndoable(null), []);
+
+  /** Removes the last logged event (soft delete) and reloads the counts. */
+  const undo = useCallback(async () => {
+    if (!undoable || !childId) return;
+    setUndoable(null);
+    try {
+      await events.softDelete(undoable.eventId);
+      await reloadCounts(childId);
+    } catch {
+      setSaveFailed(true);
+    }
+  }, [undoable, childId, events, reloadCounts]);
+
+  return {
+    types,
+    status,
+    count,
+    typeCounts,
+    saveFailed,
+    celebrating,
+    endCelebration,
+    log,
+    undoable,
+    undo,
+    dismissUndo,
+  };
 }

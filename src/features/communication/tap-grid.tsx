@@ -7,6 +7,7 @@ import { colors, radii, spacing } from '@/ui/theme';
 
 import { Celebration } from './celebration';
 import { DailyCounter } from './daily-counter';
+import { UndoSnackbar } from './undo-snackbar';
 import { useTapGrid } from './use-tap-grid';
 
 const TILE_MIN_HEIGHT = 128;
@@ -43,39 +44,65 @@ function Tile({
 }
 
 export function TapGrid() {
-  const { types, status, count, typeCounts, saveFailed, celebrating, endCelebration, log } =
-    useTapGrid();
+  const {
+    types,
+    status,
+    count,
+    typeCounts,
+    saveFailed,
+    celebrating,
+    endCelebration,
+    log,
+    undoable,
+    undo,
+    dismissUndo,
+  } = useTapGrid();
 
   if (status === 'loading') return <AppText color="textMuted">{strings.today.loading}</AppText>;
   if (status === 'loadFailed') return <AppText color="danger">{strings.today.loadFailed}</AppText>;
 
+  const undoLabel = types.find((t) => t.id === undoable?.typeId)?.label ?? '';
+
   return (
-    <ScrollView contentContainerStyle={styles.content}>
-      <DailyCounter count={count} />
-      {celebrating && <Celebration onDone={endCelebration} />}
-      <AppText color="textMuted" style={styles.reminder}>
-        {strings.today.reminder}
-      </AppText>
-      {saveFailed && (
-        <AppText color="danger" accessibilityLiveRegion="polite">
-          {strings.today.saveFailed}
+    <View style={styles.root}>
+      <ScrollView contentContainerStyle={styles.content}>
+        <DailyCounter count={count} />
+        {celebrating && <Celebration onDone={endCelebration} />}
+        <AppText color="textMuted" style={styles.reminder}>
+          {strings.today.reminder}
         </AppText>
+        {saveFailed && (
+          <AppText color="danger" accessibilityLiveRegion="polite">
+            {strings.today.saveFailed}
+          </AppText>
+        )}
+        <View style={styles.grid}>
+          {types.map((type) => (
+            <Tile
+              key={type.id}
+              type={type}
+              count={typeCounts[type.id] ?? 0}
+              onPress={() => log(type.id)}
+            />
+          ))}
+        </View>
+      </ScrollView>
+      {undoable && (
+        <UndoSnackbar
+          key={undoable.eventId}
+          message={strings.today.logged(undoLabel)}
+          onUndo={undo}
+          onExpire={dismissUndo}
+        />
       )}
-      <View style={styles.grid}>
-        {types.map((type) => (
-          <Tile
-            key={type.id}
-            type={type}
-            count={typeCounts[type.id] ?? 0}
-            onPress={() => log(type.id)}
-          />
-        ))}
-      </View>
-    </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+  },
   content: {
     gap: spacing.md,
     padding: spacing.md,
