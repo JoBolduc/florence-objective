@@ -1,0 +1,26 @@
+# Supabase CLI project config. Local stack: `npx supabase start`; reset schema: `npx supabase db reset`.
+project_id = "petits-pas"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public"]
+
+[db]
+port = 54322
+major_version = 17
+
+[db.migrations]
+enabled = true
+
+[auth]
+enabled = true
+site_url = "petitspas://"
+additional_redirect_urls = ["petitspas://"]
+enable_signup = true
+
+[auth.email]
+enable_signup = true
+enable_confirmations = true
+otp_length = 6
+otp_expiry = 3600
