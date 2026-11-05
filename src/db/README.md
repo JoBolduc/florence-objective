@@ -14,3 +14,4 @@ Local SQLite storage (expo-sqlite), opened once by `<SQLiteProvider>` in `src/ap
 - Every write bumps `updated_at`; sync resolves conflicts with it (last write wins).
 - `communication_type` is seeded by migration 2 with stable slug ids (`encore`, `fini`, `fache`, `donner`, `aider`, `attendre`, `manger`). `event.type_id` stores these ids; never reuse or renumber one.
 - Events store both `occurred_at` (UTC) and `local_date` (the phone's calendar day), so days follow local midnight.
+- Sync bookkeeping (migration 5): `synced_at` on `child`, `event`, `day_note` is the `updated_at` the server last acknowledged. A row is pending when `synced_at` is NULL or older than `updated_at`. The engine in `src/features/sync/` owns these columns; repositories never touch them. `sync_state` stores pull cursors.

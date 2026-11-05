@@ -24,7 +24,13 @@ describe('migrate', () => {
     expect(await migrate(db)).toBe(LATEST);
 
     expect(await getSchemaVersion(db)).toBe(LATEST);
-    expect(await tableNames(db)).toEqual(['child', 'communication_type', 'day_note', 'event']);
+    expect(await tableNames(db)).toEqual([
+      'child',
+      'communication_type',
+      'day_note',
+      'event',
+      'sync_state',
+    ]);
   });
 
   it('is a no-op when already up to date', async () => {

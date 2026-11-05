@@ -97,11 +97,29 @@ INSERT INTO communication_type (id, label, icon, sort_order, created_at, updated
   ('mot',     'Mot',     '💬', 9, '2026-11-05T00:00:00.000Z', '2026-11-05T00:00:00.000Z');
 `;
 
+/**
+ * E2-S5: sync bookkeeping. `synced_at` is the `updated_at` the server last acknowledged
+ * for the row; a row is pending when it is NULL or older than `updated_at`. `sync_state`
+ * holds the per-table pull cursors. Existing rows start pending, so R1 data is pushed
+ * the first time the household syncs (E2-S9). `communication_type` is not synced yet.
+ */
+const SCHEMA_V5 = `
+ALTER TABLE child ADD COLUMN synced_at TEXT;
+ALTER TABLE event ADD COLUMN synced_at TEXT;
+ALTER TABLE day_note ADD COLUMN synced_at TEXT;
+
+CREATE TABLE sync_state (
+  key TEXT PRIMARY KEY NOT NULL,
+  value TEXT NOT NULL
+);
+`;
+
 export const MIGRATIONS: readonly Migration[] = [
   { version: 1, up: SCHEMA_V1 },
   { version: 2, up: SCHEMA_V2 },
   { version: 3, up: SCHEMA_V3 },
   { version: 4, up: SCHEMA_V4 },
+  { version: 5, up: SCHEMA_V5 },
 ];
 
 export async function getSchemaVersion(db: SqlDatabase): Promise<number> {
