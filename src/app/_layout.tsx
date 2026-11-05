@@ -2,6 +2,7 @@ import { type ErrorBoundaryProps, Stack } from 'expo-router';
 import { SQLiteProvider } from 'expo-sqlite';
 
 import { DATABASE_NAME, initDatabase } from '@/db';
+import { SessionProvider } from '@/features/account/session';
 import { AppText } from '@/ui/app-text';
 import { Button } from '@/ui/button';
 import { CenteredScreen } from '@/ui/centered-screen';
@@ -19,10 +20,12 @@ export function ErrorBoundary({ retry }: ErrorBoundaryProps) {
 export default function RootLayout() {
   return (
     <SQLiteProvider databaseName={DATABASE_NAME} onInit={initDatabase}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="+not-found" options={{ headerShown: false }} />
-      </Stack>
+      <SessionProvider>
+        <Stack>
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="+not-found" options={{ headerShown: false }} />
+        </Stack>
+      </SessionProvider>
     </SQLiteProvider>
   );
 }

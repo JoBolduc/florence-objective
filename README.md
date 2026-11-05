@@ -51,3 +51,7 @@ An update keeps local data only if all of these hold:
 - The build number never goes down. EAS raises it on every build (`appVersionSource: remote`, `autoIncrement`).
 
 Both profiles share one package, so a phone holds either the preview or the development build, not both. Switching between them replaces the app and keeps its data.
+
+## Sync backend (E2)
+
+Set `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_ANON_KEY` (in `.env`, and as EAS environment variables for builds). Without them the app stays local-only. Schema and policies live in `supabase/migrations/`.
