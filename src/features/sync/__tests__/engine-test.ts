@@ -1,4 +1,4 @@
-import { migrate } from '@/db/migrations';
+import { migrate, MIGRATIONS } from '@/db/migrations';
 import {
   createChildRepository,
   createDayNoteRepository,
@@ -212,5 +212,33 @@ describe('sync engine', () => {
 
     // child + event pushed once each, plus at most one extra empty pass
     expect(remote.pushCalls).toBe(2);
+  });
+
+  it('moves data logged before sync existed (R1) to the partner', async () => {
+    const { remote } = createFakeRemote();
+    // A phone still on the R1 schema, with a child and events already logged.
+    const db = openTestDatabase();
+    await migrate(db, MIGRATIONS.slice(0, 4));
+    const { deps } = testDeps();
+    const child = await createChildRepository(db, deps).insert({ name: 'Florence' });
+    const events = createEventRepository(db, deps);
+    for (let i = 0; i < 6; i++) await events.insert({ childId: child.id, typeId: 'encore' });
+    await createDayNoteRepository(db, deps).save({
+      childId: child.id,
+      localDate: '2026-11-02',
+      body: 'bad night',
+    });
+
+    // The app update adds the sync columns; every existing row starts pending.
+    await migrate(db);
+    const engine = createSyncEngine(db, remote);
+    expect(await engine.pendingCount()).toBe(8);
+    await engine.sync();
+    expect(await engine.pendingCount()).toBe(0);
+
+    const partner = await phone(remote);
+    await partner.engine.sync();
+    expect(await total(partner, child.id)).toBe(6);
+    expect((await partner.dayNotes.getForDay(child.id, '2026-11-02'))?.body).toBe('bad night');
   });
 });
