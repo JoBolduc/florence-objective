@@ -63,6 +63,12 @@ export const strings = {
     signedInAs: (email: string) => `Connecté : ${email}`,
     signOut: 'Se déconnecter',
   },
+  sync: {
+    synced: 'Synchronisé',
+    syncing: 'Synchronisation…',
+    pending: (count: number) => `${count} en attente`,
+    error: 'Erreur de synchronisation',
+  },
   household: {
     title: 'Foyer',
     loadFailed: 'Impossible de charger le foyer. Vérifiez la connexion.',
