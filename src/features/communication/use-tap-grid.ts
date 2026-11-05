@@ -6,7 +6,7 @@ import { useRepositories, type CommunicationTypeRecord, type EventRecord } from 
 import { DAILY_TARGET } from './daily-target';
 
 /** Name given to the tracked child on first launch (E6 adds editing). */
-const DEFAULT_CHILD_NAME = 'Florence';
+export const DEFAULT_CHILD_NAME = 'Florence';
 
 type Status = 'loading' | 'ready' | 'loadFailed';
 
