@@ -60,18 +60,19 @@ export function TapGrid() {
     celebrating,
     endCelebration,
     log,
-    saveNote,
+    saveEvent,
+    deleteEvent,
     undoable,
     undo,
     dismissUndo,
   } = useTapGrid();
-  // The event whose sheet is open (note editing).
-  const [sheetEventId, setSheetEventId] = useState<string | null>(null);
+  // The event whose sheet is open (note, type, time, deletion).
+  const [sheet, setSheet] = useState<{ id: string; focusNote: boolean } | null>(null);
 
   if (status === 'loading') return <AppText color="textMuted">{strings.today.loading}</AppText>;
   if (status === 'loadFailed') return <AppText color="danger">{strings.today.loadFailed}</AppText>;
 
-  const sheetEvent = todayEvents.find((e) => e.id === sheetEventId);
+  const sheetEvent = todayEvents.find((e) => e.id === sheet?.id);
   const undoLabel = types.find((t) => t.id === undoable?.typeId)?.label ?? '';
 
   return (
@@ -96,7 +97,7 @@ export function TapGrid() {
               onPress={() => log(type.id)}
               onLongPress={() => {
                 // Logs exactly one event, then offers to describe it.
-                log(type.id).then((event) => event && setSheetEventId(event.id));
+                log(type.id).then((event) => event && setSheet({ id: event.id, focusNote: true }));
               }}
             />
           ))}
@@ -104,19 +105,24 @@ export function TapGrid() {
         <Timeline
           events={todayEvents}
           types={types}
-          onSelect={(event) => setSheetEventId(event.id)}
+          onSelect={(event) => setSheet({ id: event.id, focusNote: false })}
         />
       </ScrollView>
       {sheetEvent && (
         <EventSheet
           key={sheetEvent.id}
           event={sheetEvent}
-          type={types.find((t) => t.id === sheetEvent.typeId)}
+          types={types}
+          focusNote={sheet?.focusNote ?? false}
           onSave={(changes) => {
-            saveNote(sheetEvent.id, changes.note);
-            setSheetEventId(null);
+            saveEvent(sheetEvent.id, changes);
+            setSheet(null);
           }}
-          onClose={() => setSheetEventId(null)}
+          onDelete={() => {
+            deleteEvent(sheetEvent.id);
+            setSheet(null);
+          }}
+          onClose={() => setSheet(null)}
         />
       )}
       {undoable && (

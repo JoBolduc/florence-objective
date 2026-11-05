@@ -100,12 +100,27 @@ export function useTapGrid() {
     [childId, events, day, applyEvents],
   );
 
-  /** Sets or clears (null) an event's note. */
-  const saveNote = useCallback(
-    async (eventId: string, note: string | null) => {
+  /** Saves the edited fields of an event (note, type, time) and reloads the events. */
+  const saveEvent = useCallback(
+    async (eventId: string, changes: { typeId: string; occurredAt: Date; note: string | null }) => {
       if (!childId) return;
       try {
-        await events.update(eventId, { note });
+        await events.update(eventId, changes);
+        await reload(childId);
+      } catch {
+        setSaveFailed(true);
+      }
+    },
+    [childId, events, reload],
+  );
+
+  /** Soft-deletes an event (the row is kept for sync) and reloads the events. */
+  const deleteEvent = useCallback(
+    async (eventId: string) => {
+      if (!childId) return;
+      setUndoable((current) => (current?.eventId === eventId ? null : current));
+      try {
+        await events.softDelete(eventId);
         await reload(childId);
       } catch {
         setSaveFailed(true);
@@ -147,7 +162,8 @@ export function useTapGrid() {
     celebrating,
     endCelebration,
     log,
-    saveNote,
+    saveEvent,
+    deleteEvent,
     undoable,
     undo,
     dismissUndo,
