@@ -42,8 +42,12 @@ export function useTapGrid(day: string) {
   const celebratedDay = useRef<string | null>(null);
 
   const applyEvents = useCallback((list: EventRecord[]) => {
-    eventsRef.current = list;
-    setTodayEvents(list);
+    // A reload and a just-inserted event can both carry the same row: keep one per id,
+    // since the id is the React list key.
+    const seen = new Set<string>();
+    const unique = list.filter((e) => !seen.has(e.id) && seen.add(e.id));
+    eventsRef.current = unique;
+    setTodayEvents(unique);
   }, []);
 
   /** Reloads today's events from the database: counts, badges and timeline follow. */
