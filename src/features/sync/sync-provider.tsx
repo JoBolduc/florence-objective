@@ -13,7 +13,12 @@ import { AppState } from 'react-native';
 
 import { useSession } from '@/features/account/session';
 import { supabase } from '@/features/account/supabase';
-import { getHouseholdId } from '@/features/household/local-household';
+import { fetchMemberInitials } from '@/features/household/household-api';
+import {
+  getHouseholdId,
+  getMemberInitials,
+  setMemberInitials,
+} from '@/features/household/local-household';
 
 import { createSyncController, type SyncController, type SyncState } from './controller';
 import { createSyncEngine } from './engine';
@@ -26,6 +31,8 @@ interface SyncContextValue {
   /** False until the parent is signed in and belongs to a household. */
   enabled: boolean;
   state: SyncState;
+  /** Initials of each parent by user id, for the timeline. */
+  memberInitials: Record<string, string>;
   /** Call after every local write: schedules a debounced sync. */
   noteWrite: () => void;
   /** Sync right now (pull to refresh). Never rejects; the state reports failures. */
@@ -39,6 +46,7 @@ const IDLE: SyncState = { status: 'synced', pending: 0, revision: 0 };
 const SyncContext = createContext<SyncContextValue>({
   enabled: false,
   state: IDLE,
+  memberInitials: {},
   noteWrite: () => {},
   syncNow: async () => {},
   attachHousehold: () => {},
@@ -50,6 +58,7 @@ export function SyncProvider({ children }: { children: ReactNode }) {
   const db = useSQLiteContext();
   const session = useSession();
   const [householdId, setHousehold] = useState<string | null>(null);
+  const [memberInitials, setInitials] = useState<Record<string, string>>({});
   const signedIn = session.status === 'signedIn';
 
   useEffect(() => {
@@ -93,6 +102,21 @@ export function SyncProvider({ children }: { children: ReactNode }) {
     controller ? controller.getState : () => IDLE,
   );
 
+  // Cached initials first (works offline), then refreshed after each sync that changed data.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setInitials(await getMemberInitials(db));
+      if (!supabase || !controller) return;
+      const fresh = await fetchMemberInitials(supabase);
+      await setMemberInitials(db, fresh);
+      if (!cancelled) setInitials(fresh);
+    })().catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [db, controller, state.revision]);
+
   const noteWrite = useCallback(() => controller?.noteWrite(), [controller]);
   const syncNow = useCallback(async () => {
     await controller?.syncNow();
@@ -102,11 +126,12 @@ export function SyncProvider({ children }: { children: ReactNode }) {
     () => ({
       enabled: controller !== null,
       state,
+      memberInitials,
       noteWrite,
       syncNow,
       attachHousehold: setHousehold,
     }),
-    [controller, state, noteWrite, syncNow],
+    [controller, state, memberInitials, noteWrite, syncNow],
   );
 
   return <SyncContext.Provider value={value}>{children}</SyncContext.Provider>;

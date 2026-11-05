@@ -102,7 +102,9 @@ export const strings = {
     timelineTitle: 'Aujourd’hui, du plus récent au plus ancien',
     unknownIcon: '❔',
     timelineEmpty: 'Aucun signe enregistré pour le moment.',
-    openEvent: (label: string) => `Modifier : ${label}`,
+    openEvent: (label: string, author: string | null) =>
+      author ? `Modifier : ${label}, noté par ${author}` : `Modifier : ${label}`,
+    unknownAuthor: '?',
     notCounted: 'Non compté',
     undo: 'Annuler',
     logged: (label: string) => `${label} enregistré`,

@@ -10,10 +10,13 @@ import { colors, radii, spacing } from '@/ui/theme';
 export function Timeline({
   events,
   types,
+  memberInitials,
   onSelect,
 }: {
   events: EventRecord[];
   types: CommunicationTypeRecord[];
+  /** Initials by user id; events from before sign-in have no author. */
+  memberInitials: Record<string, string>;
   onSelect: (event: EventRecord) => void;
 }) {
   const typeById = new Map(types.map((t) => [t.id, t]));
@@ -26,11 +29,14 @@ export function Timeline({
       {events.length === 0 && <AppText color="textMuted">{strings.today.timelineEmpty}</AppText>}
       {events.map((event) => {
         const type = typeById.get(event.typeId);
+        const initials = event.loggedBy
+          ? (memberInitials[event.loggedBy] ?? strings.today.unknownAuthor)
+          : null;
         return (
           <Pressable
             key={event.id}
             accessibilityRole="button"
-            accessibilityLabel={strings.today.openEvent(type?.label ?? event.typeId)}
+            accessibilityLabel={strings.today.openEvent(type?.label ?? event.typeId, initials)}
             onPress={() => onSelect(event)}
             style={styles.row}
           >
@@ -49,6 +55,13 @@ export function Timeline({
                 </AppText>
               ) : null}
             </View>
+            {initials ? (
+              <View style={styles.author}>
+                <AppText variant="caption" color="onPrimary" style={styles.authorText}>
+                  {initials}
+                </AppText>
+              </View>
+            ) : null}
           </Pressable>
         );
       })}
@@ -70,5 +83,16 @@ const styles = StyleSheet.create({
   },
   text: {
     flex: 1,
+  },
+  author: {
+    minWidth: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 20,
+    backgroundColor: colors.primary,
+  },
+  authorText: {
+    fontWeight: '700',
   },
 });

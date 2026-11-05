@@ -60,6 +60,7 @@ export function TapGrid({ day }: { day: string }) {
     count,
     typeCounts,
     todayEvents,
+    memberInitials,
     dayNote,
     loadedDay,
     saveDayNote,
@@ -127,6 +128,7 @@ export function TapGrid({ day }: { day: string }) {
         <Timeline
           events={todayEvents}
           types={types}
+          memberInitials={memberInitials}
           onSelect={(event) => setSheet({ id: event.id, focusNote: false })}
         />
       </ScrollView>

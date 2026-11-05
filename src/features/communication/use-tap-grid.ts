@@ -2,6 +2,7 @@ import * as Haptics from 'expo-haptics';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useRepositories, type CommunicationTypeRecord, type EventRecord } from '@/db';
+import { useSession } from '@/features/account/session';
 import { useSync } from '@/features/sync/sync-provider';
 
 import { DAILY_TARGET } from './daily-target';
@@ -26,7 +27,10 @@ const countedIn = (list: EventRecord[]) => list.filter((e) => e.counts).length;
 /** `day` is the local date being shown (YYYY-MM-DD); a new value reloads the screen for that day. */
 export function useTapGrid(day: string) {
   const { children, communicationTypes, events, dayNotes } = useRepositories();
-  const { state: syncState, noteWrite } = useSync();
+  const { state: syncState, noteWrite, memberInitials } = useSync();
+  const session = useSession();
+  // Stamped on new rows so the timeline can show who logged them (null while signed out).
+  const userId = session.status === 'signedIn' ? session.session.user.id : null;
   // Bumps when a sync brought in the partner's changes: reload what is shown.
   const syncRevision = syncState.revision;
   const [types, setTypes] = useState<CommunicationTypeRecord[]>([]);
@@ -101,7 +105,7 @@ export function useTapGrid(day: string) {
       if (!childId) return null;
       buzz(Haptics.AndroidHaptics.Virtual_Key);
       try {
-        const event = await events.insert({ childId, typeId, ...extra });
+        const event = await events.insert({ childId, typeId, loggedBy: userId, ...extra });
         noteWrite();
         setSaveFailed(false);
         if (event.localDate !== day) return event;
@@ -118,7 +122,7 @@ export function useTapGrid(day: string) {
         return null;
       }
     },
-    [childId, events, day, applyEvents, noteWrite],
+    [childId, events, day, applyEvents, noteWrite, userId],
   );
 
   /** Saves the edited fields of an event (note, type, time) and reloads the events. */
@@ -179,7 +183,7 @@ export function useTapGrid(day: string) {
       try {
         const text = body.trim();
         if (text) {
-          await dayNotes.save({ childId, localDate: day, body: text });
+          await dayNotes.save({ childId, localDate: day, body: text, loggedBy: userId });
         } else {
           const existing = await dayNotes.getForDay(childId, day);
           if (existing) await dayNotes.softDelete(existing.id);
@@ -189,7 +193,7 @@ export function useTapGrid(day: string) {
         setSaveFailed(true);
       }
     },
-    [childId, dayNotes, day, noteWrite],
+    [childId, dayNotes, day, noteWrite, userId],
   );
 
   const count = countedIn(todayEvents);
@@ -205,6 +209,7 @@ export function useTapGrid(day: string) {
     count,
     typeCounts,
     todayEvents,
+    memberInitials,
     dayNote,
     loadedDay,
     saveDayNote,

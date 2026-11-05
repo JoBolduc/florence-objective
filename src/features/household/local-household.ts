@@ -31,3 +31,28 @@ export async function discardUnsyncedLocalData(db: SqlDatabase): Promise<void> {
     await db.runAsync('DELETE FROM child WHERE synced_at IS NULL', []);
   });
 }
+
+const INITIALS_KEY = 'member_initials';
+
+/** Cached so the timeline can show who logged an event while offline. */
+export async function getMemberInitials(db: SqlDatabase): Promise<Record<string, string>> {
+  const row = await db.getFirstAsync<{ value: string }>(
+    'SELECT value FROM sync_state WHERE key = ?',
+    [INITIALS_KEY],
+  );
+  try {
+    return row ? (JSON.parse(row.value) as Record<string, string>) : {};
+  } catch {
+    return {};
+  }
+}
+
+export async function setMemberInitials(
+  db: SqlDatabase,
+  initials: Record<string, string>,
+): Promise<void> {
+  await db.runAsync('INSERT OR REPLACE INTO sync_state (key, value) VALUES (?, ?)', [
+    INITIALS_KEY,
+    JSON.stringify(initials),
+  ]);
+}

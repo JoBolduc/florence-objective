@@ -2,7 +2,13 @@ import { migrate } from '@/db/migrations';
 import { createChildRepository, createEventRepository } from '@/db/repositories';
 import { openTestDatabase, testDeps } from '@/db/testing/node-sqlite';
 
-import { discardUnsyncedLocalData, getHouseholdId, setHouseholdId } from '../local-household';
+import {
+  discardUnsyncedLocalData,
+  getHouseholdId,
+  getMemberInitials,
+  setHouseholdId,
+  setMemberInitials,
+} from '../local-household';
 
 describe('local household', () => {
   it('remembers the household id', async () => {
@@ -31,5 +37,15 @@ describe('local household', () => {
 
     expect((await children.list()).map((c) => c.id)).toEqual([shared.id]);
     expect(await events.countByDay(stray.id, '2026-11-02')).toBe(0);
+  });
+
+  it('caches member initials for offline use', async () => {
+    const db = openTestDatabase();
+    await migrate(db);
+    expect(await getMemberInitials(db)).toEqual({});
+
+    await setMemberInitials(db, { u1: 'JB', u2: 'MA' });
+
+    expect(await getMemberInitials(db)).toEqual({ u1: 'JB', u2: 'MA' });
   });
 });

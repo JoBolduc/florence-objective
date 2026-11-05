@@ -44,3 +44,10 @@ export async function joinHousehold(
   if (error.message.includes('already_in_household')) return { failure: 'alreadyInHousehold' };
   return { failure: 'failed' };
 }
+
+/** Initials of each parent in the household, by user id. */
+export async function fetchMemberInitials(client: SupabaseClient): Promise<Record<string, string>> {
+  const { data, error } = await client.from('household_member').select('user_id, initials');
+  if (error) throw new Error(error.message);
+  return Object.fromEntries((data ?? []).map((m) => [m.user_id as string, m.initials as string]));
+}
