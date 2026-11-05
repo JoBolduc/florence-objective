@@ -1,7 +1,7 @@
 import * as Haptics from 'expo-haptics';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { toLocalDate, useRepositories, type CommunicationTypeRecord, type EventRecord } from '@/db';
+import { useRepositories, type CommunicationTypeRecord, type EventRecord } from '@/db';
 
 import { DAILY_TARGET } from './daily-target';
 
@@ -19,7 +19,8 @@ function buzz(type: (typeof Haptics.AndroidHaptics)[keyof typeof Haptics.Android
   }
 }
 
-export function useTapGrid() {
+/** `day` is the local date being shown (YYYY-MM-DD); a new value reloads the screen for that day. */
+export function useTapGrid(day: string) {
   const { children, communicationTypes, events } = useRepositories();
   const [types, setTypes] = useState<CommunicationTypeRecord[]>([]);
   const [childId, setChildId] = useState<string | null>(null);
@@ -31,8 +32,6 @@ export function useTapGrid() {
   // The event the snackbar offers to undo. A new tap replaces it.
   const [undoable, setUndoable] = useState<{ eventId: string; typeId: string } | null>(null);
 
-  // The day shown by the screen. E1-S8 handles the app staying open past midnight.
-  const [day] = useState(() => toLocalDate(new Date()));
   // Latest events, readable inside async callbacks. The celebration flag is in memory
   // only: reopening the app on a day already celebrated and undoing back to 9 could
   // celebrate again.
@@ -64,6 +63,7 @@ export function useTapGrid() {
       // Today already reached the target before this launch: nothing to celebrate.
       if (list.length >= DAILY_TARGET) celebratedDay.current = day;
       applyEvents(list);
+      setUndoable(null);
       setTypes(loadedTypes);
       setChildId(child.id);
       setStatus('ready');

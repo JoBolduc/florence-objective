@@ -1,15 +1,16 @@
-import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
+import { fromLocalDate } from '@/db';
 import { TapGrid } from '@/features/communication/tap-grid';
+import { useLocalDay } from '@/features/communication/use-local-day';
 import { AppText } from '@/ui/app-text';
 import { formatDate } from '@/ui/format';
 import { colors, spacing } from '@/ui/theme';
 import { strings } from '@/ui/strings';
 
 export default function Today() {
-  // Fixed once the screen opens: E1-S8 handles the app staying open past midnight.
-  const [today] = useState(() => new Date());
+  // Follows local midnight, so the screen rolls over to the new day while the app stays open.
+  const day = useLocalDay();
 
   return (
     <View style={styles.container}>
@@ -17,9 +18,9 @@ export default function Today() {
         {strings.tabs.today}
       </AppText>
       <AppText color="textMuted" style={styles.title}>
-        {formatDate(today)}
+        {formatDate(fromLocalDate(day))}
       </AppText>
-      <TapGrid />
+      <TapGrid day={day} />
     </View>
   );
 }

@@ -49,7 +49,7 @@ function Tile({
   );
 }
 
-export function TapGrid() {
+export function TapGrid({ day }: { day: string }) {
   const {
     types,
     status,
@@ -65,7 +65,7 @@ export function TapGrid() {
     undoable,
     undo,
     dismissUndo,
-  } = useTapGrid();
+  } = useTapGrid(day);
   // The event whose sheet is open (note, type, time, deletion).
   const [sheet, setSheet] = useState<{ id: string; focusNote: boolean } | null>(null);
 
