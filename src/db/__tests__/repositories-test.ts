@@ -290,3 +290,25 @@ describe('event active days', () => {
     );
   });
 });
+
+describe('counted events per day', () => {
+  it('counts only events that count, per day, within the range', async () => {
+    const { events, child } = await setup();
+    const at = (day: number) => new Date(2026, 10, day, 9);
+    await events.insert({ childId: child.id, typeId: 'fini', occurredAt: at(2) });
+    await events.insert({ childId: child.id, typeId: 'encore', occurredAt: at(2) });
+    await events.insert({ childId: child.id, typeId: 'mot', occurredAt: at(2), counts: false });
+    await events.insert({ childId: child.id, typeId: 'fini', occurredAt: at(4) });
+    await events.insert({ childId: child.id, typeId: 'fini', occurredAt: new Date(2026, 11, 1) });
+
+    const rows = await events.countsByDayRange(child.id, '2026-11-01', '2026-11-30');
+
+    expect(rows).toHaveLength(2);
+    expect(rows).toEqual(
+      expect.arrayContaining([
+        { localDate: '2026-11-02', total: 2 },
+        { localDate: '2026-11-04', total: 1 },
+      ]),
+    );
+  });
+});

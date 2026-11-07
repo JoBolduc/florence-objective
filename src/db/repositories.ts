@@ -197,6 +197,21 @@ export function createEventRepository(db: SqlDatabase, deps: RepositoryDeps = de
       );
     },
 
+    /** Counted events per local day between two days (inclusive); empty days are absent. */
+    async countsByDayRange(
+      childId: string,
+      from: string,
+      to: string,
+    ): Promise<{ localDate: string; total: number }[]> {
+      return db.getAllAsync<{ localDate: string; total: number }>(
+        `SELECT local_date AS localDate, COUNT(*) AS total FROM event
+         WHERE child_id = ? AND local_date >= ? AND local_date <= ?
+           AND deleted_at IS NULL AND counts = 1
+         GROUP BY local_date`,
+        [childId, from, to],
+      );
+    },
+
     /** Live events of one local day, newest first. */
     async listByDay(childId: string, localDate: string): Promise<EventRecord[]> {
       const rows = await db.getAllAsync<EventRow>(

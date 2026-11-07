@@ -1,5 +1,6 @@
 import { ScrollView, StyleSheet } from 'react-native';
 
+import { HistoryCalendar } from '@/features/goals/history-calendar';
 import { MasteryList } from '@/features/goals/mastery-list';
 import { AppText } from '@/ui/app-text';
 import { strings } from '@/ui/strings';
@@ -11,6 +12,7 @@ export default function History() {
       <AppText accessibilityRole="header" variant="heading">
         {strings.tabs.history}
       </AppText>
+      <HistoryCalendar />
       <MasteryList />
     </ScrollView>
   );

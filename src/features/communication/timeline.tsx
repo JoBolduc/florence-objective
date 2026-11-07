@@ -12,21 +12,25 @@ export function Timeline({
   types,
   memberInitials,
   onSelect,
+  title = strings.today.timelineTitle,
+  emptyText = strings.today.timelineEmpty,
 }: {
   events: EventRecord[];
   types: CommunicationTypeRecord[];
   /** Initials by user id; events from before sign-in have no author. */
   memberInitials: Record<string, string>;
-  onSelect: (event: EventRecord) => void;
+  onSelect?: (event: EventRecord) => void;
+  title?: string;
+  emptyText?: string;
 }) {
   const typeById = new Map(types.map((t) => [t.id, t]));
 
   return (
     <View style={styles.section}>
       <AppText accessibilityRole="header" variant="label">
-        {strings.today.timelineTitle}
+        {title}
       </AppText>
-      {events.length === 0 && <AppText color="textMuted">{strings.today.timelineEmpty}</AppText>}
+      {events.length === 0 && <AppText color="textMuted">{emptyText}</AppText>}
       {events.map((event) => {
         const type = typeById.get(event.typeId);
         const initials = event.loggedBy
@@ -35,9 +39,10 @@ export function Timeline({
         return (
           <Pressable
             key={event.id}
-            accessibilityRole="button"
+            accessibilityRole={onSelect ? 'button' : undefined}
             accessibilityLabel={strings.today.openEvent(type?.label ?? event.typeId, initials)}
-            onPress={() => onSelect(event)}
+            disabled={!onSelect}
+            onPress={() => onSelect?.(event)}
             style={styles.row}
           >
             <AppText color="textMuted">{formatTime(new Date(event.occurredAt))}</AppText>

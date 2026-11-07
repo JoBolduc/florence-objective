@@ -23,3 +23,10 @@ export function formatDate(date: Date): string {
 export function formatTime(date: Date): string {
   return timeFormatter.format(date);
 }
+
+const monthFormatter = new Intl.DateTimeFormat(LOCALE, { month: 'long', year: 'numeric' });
+
+/** "novembre 2026" */
+export function formatMonth(date: Date): string {
+  return monthFormatter.format(date);
+}
