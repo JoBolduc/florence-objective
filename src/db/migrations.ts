@@ -114,12 +114,29 @@ CREATE TABLE sync_state (
 );
 `;
 
+/**
+ * E5-S1: goal settings. One row per (key, effective_from): a change of the daily target
+ * takes effect from a date, so past days keep being judged against the target in force
+ * then. Settings without history (program dates, mastery thresholds) use the base date
+ * '0000-00-00'. Kept on this phone for now (not synced yet), hence no sync columns.
+ */
+const SCHEMA_V6 = `
+CREATE TABLE goal_setting (
+  key TEXT NOT NULL,
+  effective_from TEXT NOT NULL,
+  value TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  PRIMARY KEY (key, effective_from)
+);
+`;
+
 export const MIGRATIONS: readonly Migration[] = [
   { version: 1, up: SCHEMA_V1 },
   { version: 2, up: SCHEMA_V2 },
   { version: 3, up: SCHEMA_V3 },
   { version: 4, up: SCHEMA_V4 },
   { version: 5, up: SCHEMA_V5 },
+  { version: 6, up: SCHEMA_V6 },
 ];
 
 export async function getSchemaVersion(db: SqlDatabase): Promise<number> {

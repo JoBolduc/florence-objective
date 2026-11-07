@@ -4,7 +4,6 @@ import { AppText } from '@/ui/app-text';
 import { strings } from '@/ui/strings';
 import { colors } from '@/ui/theme';
 
-import { DAILY_TARGET } from './daily-target';
 import { ringDots } from './ring';
 
 const RADIUS = 72;
@@ -12,15 +11,15 @@ const DOT = 18;
 const SIZE = 2 * RADIUS + DOT;
 
 /** Progress ring made of one dot per target sign, with "7 / 10" in the middle. */
-export function DailyCounter({ count }: { count: number }) {
+export function DailyCounter({ count, target }: { count: number; target: number }) {
   return (
     <View
       accessible
-      accessibilityLabel={strings.today.counter(count, DAILY_TARGET)}
+      accessibilityLabel={strings.today.counter(count, target)}
       accessibilityLiveRegion="polite"
       style={styles.ring}
     >
-      {ringDots(count, DAILY_TARGET, RADIUS).map((dot, i) => (
+      {ringDots(count, target, RADIUS).map((dot, i) => (
         <View
           key={i}
           style={[
@@ -30,7 +29,7 @@ export function DailyCounter({ count }: { count: number }) {
           ]}
         />
       ))}
-      <AppText variant="heading">{strings.today.counterText(count, DAILY_TARGET)}</AppText>
+      <AppText variant="heading">{strings.today.counterText(count, target)}</AppText>
     </View>
   );
 }

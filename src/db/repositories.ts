@@ -292,3 +292,43 @@ export function createDayNoteRepository(db: SqlDatabase, deps: RepositoryDeps = 
     },
   };
 }
+
+export interface GoalSettingRow {
+  key: string;
+  /** First local day (YYYY-MM-DD) the value applies to; BASE_DATE for settings without history. */
+  effectiveFrom: string;
+  value: string;
+}
+
+/** `effective_from` of settings that have no history. */
+export const BASE_DATE = '0000-00-00';
+
+export function createGoalSettingRepository(db: SqlDatabase, deps: RepositoryDeps = defaultDeps) {
+  return {
+    list(): Promise<GoalSettingRow[]> {
+      return db.getAllAsync<GoalSettingRow>(
+        `SELECT key, effective_from AS effectiveFrom, value FROM goal_setting
+         ORDER BY key, effective_from`,
+        [],
+      );
+    },
+
+    /** Sets a value from `effectiveFrom` on; saving the same key and date again replaces it. */
+    async save(key: string, value: string, effectiveFrom: string = BASE_DATE): Promise<void> {
+      await db.runAsync(
+        `INSERT OR REPLACE INTO goal_setting (key, effective_from, value, updated_at)
+         VALUES (?, ?, ?, ?)`,
+        [key, effectiveFrom, value, deps.now().toISOString()],
+      );
+    },
+
+    /** Local day of the oldest live event, or null when nothing was logged yet. */
+    async firstEventDate(): Promise<string | null> {
+      const row = await db.getFirstAsync<{ first: string | null }>(
+        `SELECT MIN(local_date) AS first FROM event WHERE deleted_at IS NULL`,
+        [],
+      );
+      return row?.first ?? null;
+    },
+  };
+}

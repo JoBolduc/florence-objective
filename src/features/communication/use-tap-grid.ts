@@ -3,9 +3,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useRepositories, type CommunicationTypeRecord, type EventRecord } from '@/db';
 import { useSession } from '@/features/account/session';
+import { useGoalSettings } from '@/features/goals/goal-settings-provider';
 import { useSync } from '@/features/sync/sync-provider';
-
-import { DAILY_TARGET } from './daily-target';
 
 /** Name given to the tracked child on first launch (E6 adds editing). */
 export const DEFAULT_CHILD_NAME = 'Florence';
@@ -29,6 +28,13 @@ export function useTapGrid(day: string) {
   const { children, communicationTypes, events, dayNotes } = useRepositories();
   const { state: syncState, noteWrite, memberInitials } = useSync();
   const session = useSession();
+  const { settings } = useGoalSettings();
+  const target = settings.dailyTargetOn(day);
+  // Read inside async callbacks without making them depend on every settings change.
+  const targetRef = useRef(target);
+  useEffect(() => {
+    targetRef.current = target;
+  }, [target]);
   // Stamped on new rows so the timeline can show who logged them (null while signed out).
   const userId = session.status === 'signedIn' ? session.session.user.id : null;
   // Bumps when a sync brought in the partner's changes: reload what is shown.
@@ -80,7 +86,7 @@ export function useTapGrid(day: string) {
       ]);
       if (cancelled) return;
       // Today already reached the target before this launch: nothing to celebrate.
-      if (countedIn(list) >= DAILY_TARGET) celebratedDay.current = day;
+      if (countedIn(list) >= targetRef.current) celebratedDay.current = day;
       applyEvents(list);
       setUndoable(null);
       setDayNote(note?.body ?? '');
@@ -111,7 +117,7 @@ export function useTapGrid(day: string) {
         if (event.localDate !== day) return event;
         applyEvents([event, ...eventsRef.current]);
         setUndoable({ eventId: event.id, typeId });
-        if (countedIn(eventsRef.current) >= DAILY_TARGET && celebratedDay.current !== day) {
+        if (countedIn(eventsRef.current) >= targetRef.current && celebratedDay.current !== day) {
           celebratedDay.current = day;
           setCelebrating(true);
           buzz(Haptics.AndroidHaptics.Confirm);
@@ -207,6 +213,7 @@ export function useTapGrid(day: string) {
     types,
     status,
     count,
+    target,
     typeCounts,
     todayEvents,
     memberInitials,

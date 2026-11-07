@@ -3,6 +3,7 @@ import { SQLiteProvider } from 'expo-sqlite';
 
 import { DATABASE_NAME, initDatabase } from '@/db';
 import { SessionProvider } from '@/features/account/session';
+import { GoalSettingsProvider } from '@/features/goals/goal-settings-provider';
 import { SyncProvider } from '@/features/sync/sync-provider';
 import { AppText } from '@/ui/app-text';
 import { Button } from '@/ui/button';
@@ -23,10 +24,12 @@ export default function RootLayout() {
     <SQLiteProvider databaseName={DATABASE_NAME} onInit={initDatabase}>
       <SessionProvider>
         <SyncProvider>
-          <Stack>
-            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-            <Stack.Screen name="+not-found" options={{ headerShown: false }} />
-          </Stack>
+          <GoalSettingsProvider>
+            <Stack>
+              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+              <Stack.Screen name="+not-found" options={{ headerShown: false }} />
+            </Stack>
+          </GoalSettingsProvider>
         </SyncProvider>
       </SessionProvider>
     </SQLiteProvider>

@@ -30,3 +30,9 @@ export function msUntilNextMidnight(now: Date): number {
   const next = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
   return next.getTime() - now.getTime();
 }
+
+/** The local day `days` after `localDate` (negative goes back), both YYYY-MM-DD. */
+export function addDays(localDate: string, days: number): string {
+  const start = fromLocalDate(localDate);
+  return toLocalDate(new Date(start.getFullYear(), start.getMonth(), start.getDate() + days));
+}

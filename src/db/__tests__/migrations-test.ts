@@ -29,6 +29,7 @@ describe('migrate', () => {
       'communication_type',
       'day_note',
       'event',
+      'goal_setting',
       'sync_state',
     ]);
   });

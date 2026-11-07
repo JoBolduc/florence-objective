@@ -8,7 +8,7 @@ import { colors, radii, spacing } from '@/ui/theme';
 const VISIBLE_MS = 2500;
 
 /** Pops in, stays a moment, fades out, then calls `onDone`. */
-export function Celebration({ onDone }: { onDone: () => void }) {
+export function Celebration({ target, onDone }: { target: number; onDone: () => void }) {
   const [scale] = useState(() => new Animated.Value(0.6));
   const [opacity] = useState(() => new Animated.Value(0));
 
@@ -33,7 +33,7 @@ export function Celebration({ onDone }: { onDone: () => void }) {
       style={[styles.banner, { opacity, transform: [{ scale }] }]}
     >
       <AppText variant="label" color="onPrimary" style={styles.text}>
-        {strings.today.celebration}
+        {strings.today.celebration(target)}
       </AppText>
     </Animated.View>
   );

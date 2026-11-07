@@ -3,6 +3,7 @@ import { ScrollView, StyleSheet } from 'react-native';
 import { useSession } from '@/features/account/session';
 import { SignInForm } from '@/features/account/sign-in-form';
 import { supabase } from '@/features/account/supabase';
+import { GoalSection } from '@/features/goals/goal-section';
 import { HouseholdSection } from '@/features/household/household-section';
 import { AppText } from '@/ui/app-text';
 import { Button } from '@/ui/button';
@@ -21,6 +22,7 @@ export default function Settings() {
       <AppText accessibilityRole="header" variant="heading">
         {strings.tabs.settings}
       </AppText>
+      <GoalSection />
       <AppText accessibilityRole="header" variant="label">
         {strings.account.title}
       </AppText>

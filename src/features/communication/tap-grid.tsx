@@ -58,6 +58,7 @@ export function TapGrid({ day }: { day: string }) {
     types,
     status,
     count,
+    target,
     typeCounts,
     todayEvents,
     memberInitials,
@@ -96,8 +97,8 @@ export function TapGrid({ day }: { day: string }) {
           ) : undefined
         }
       >
-        <DailyCounter count={count} />
-        {celebrating && <Celebration onDone={endCelebration} />}
+        <DailyCounter count={count} target={target} />
+        {celebrating && <Celebration target={target} onDone={endCelebration} />}
         <AppText color="textMuted" style={styles.reminder}>
           {strings.today.reminder}
         </AppText>

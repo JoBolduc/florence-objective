@@ -5,6 +5,7 @@ import {
   createChildRepository,
   createDayNoteRepository,
   createEventRepository,
+  createGoalSettingRepository,
 } from '../repositories';
 import { openTestDatabase, testDeps } from '../testing/node-sqlite';
 
@@ -230,5 +231,39 @@ describe('event counts', () => {
     await events.softDelete(gone.id);
 
     expect(await events.countsByType(child.id, '2026-11-02')).toEqual({ encore: 2 });
+  });
+});
+
+describe('goal setting repository', () => {
+  it('replaces a value saved twice for the same date and keeps other dates', async () => {
+    const { db } = await setup();
+    const repo = createGoalSettingRepository(db);
+    await repo.save('daily_target', '10');
+    await repo.save('daily_target', '12', '2026-12-01');
+    await repo.save('daily_target', '14', '2026-12-01');
+
+    expect(await repo.list()).toEqual([
+      { key: 'daily_target', effectiveFrom: '0000-00-00', value: '10' },
+      { key: 'daily_target', effectiveFrom: '2026-12-01', value: '14' },
+    ]);
+  });
+
+  it('finds the first live event date', async () => {
+    const { db, events, child } = await setup();
+    const repo = createGoalSettingRepository(db);
+    expect(await repo.firstEventDate()).toBeNull();
+    await events.insert({
+      childId: child.id,
+      typeId: 'fini',
+      occurredAt: new Date(2026, 10, 5, 9),
+    });
+    const early = await events.insert({
+      childId: child.id,
+      typeId: 'fini',
+      occurredAt: new Date(2026, 10, 3, 9),
+    });
+    expect(await repo.firstEventDate()).toBe('2026-11-03');
+    await events.softDelete(early.id);
+    expect(await repo.firstEventDate()).toBe('2026-11-05');
   });
 });
