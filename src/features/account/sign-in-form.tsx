@@ -6,103 +6,67 @@ import { Button } from '@/ui/button';
 import { strings } from '@/ui/strings';
 import { colors, radii, spacing, typography } from '@/ui/theme';
 
-import {
-  CODE_LENGTH,
-  isCompleteCode,
-  isValidEmail,
-  normalizeCode,
-  normalizeEmail,
-} from './email-code';
+import { isValidEmail, normalizeEmail } from './email';
 import { supabase } from './supabase';
 
-type Step = 'email' | 'code';
-
-/** Two steps: ask for the address, then for the six-digit code emailed to it. */
+/** Email and password for the accounts created in the Supabase dashboard. */
 export function SignInForm() {
-  const [step, setStep] = useState<Step>('email');
   const [email, setEmail] = useState('');
-  const [code, setCode] = useState('');
+  const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   if (!supabase) return null;
   const auth = supabase.auth;
 
-  async function sendCode() {
+  async function signIn() {
     if (!isValidEmail(email)) {
       setError(strings.account.emailInvalid);
       return;
     }
-    setBusy(true);
-    setError(null);
-    const { error: failure } = await auth.signInWithOtp({ email: normalizeEmail(email) });
-    setBusy(false);
-    if (failure) setError(strings.account.sendFailed);
-    else setStep('code');
-  }
-
-  async function verify() {
-    if (!isCompleteCode(code)) {
-      setError(strings.account.codeInvalid);
+    if (password.length === 0) {
+      setError(strings.account.passwordRequired);
       return;
     }
     setBusy(true);
     setError(null);
-    const { error: failure } = await auth.verifyOtp({
+    const { error: failure } = await auth.signInWithPassword({
       email: normalizeEmail(email),
-      token: normalizeCode(code),
-      type: 'email',
+      password,
     });
     setBusy(false);
     // On success the session provider sees the new session and swaps this form out.
-    if (failure) setError(strings.account.verifyFailed);
+    if (failure) setError(strings.account.signInFailed);
   }
 
   return (
     <View style={styles.form}>
-      {step === 'email' ? (
-        <>
-          <AppText>{strings.account.emailPrompt}</AppText>
-          <TextInput
-            accessibilityLabel={strings.account.emailLabel}
-            autoCapitalize="none"
-            autoComplete="email"
-            autoCorrect={false}
-            keyboardType="email-address"
-            value={email}
-            onChangeText={setEmail}
-            placeholder={strings.account.emailPlaceholder}
-            placeholderTextColor={colors.textMuted}
-            style={styles.input}
-          />
-          <Button label={strings.account.sendCode} onPress={sendCode} />
-        </>
-      ) : (
-        <>
-          <AppText>{strings.account.codePrompt(normalizeEmail(email))}</AppText>
-          <TextInput
-            accessibilityLabel={strings.account.codeLabel}
-            autoComplete="one-time-code"
-            keyboardType="number-pad"
-            maxLength={CODE_LENGTH + 4}
-            value={code}
-            onChangeText={setCode}
-            placeholder={strings.account.codePlaceholder}
-            placeholderTextColor={colors.textMuted}
-            style={styles.input}
-          />
-          <Button label={strings.account.verify} onPress={verify} />
-          <Button
-            label={strings.account.changeEmail}
-            variant="secondary"
-            onPress={() => {
-              setStep('email');
-              setCode('');
-              setError(null);
-            }}
-          />
-        </>
-      )}
+      <AppText>{strings.account.signInPrompt}</AppText>
+      <TextInput
+        accessibilityLabel={strings.account.emailLabel}
+        autoCapitalize="none"
+        autoComplete="email"
+        autoCorrect={false}
+        keyboardType="email-address"
+        value={email}
+        onChangeText={setEmail}
+        placeholder={strings.account.emailPlaceholder}
+        placeholderTextColor={colors.textMuted}
+        style={styles.input}
+      />
+      <TextInput
+        accessibilityLabel={strings.account.passwordLabel}
+        autoCapitalize="none"
+        autoComplete="current-password"
+        autoCorrect={false}
+        secureTextEntry
+        value={password}
+        onChangeText={setPassword}
+        placeholder={strings.account.passwordLabel}
+        placeholderTextColor={colors.textMuted}
+        style={styles.input}
+      />
+      <Button label={strings.account.signIn} onPress={signIn} />
       {busy ? <AppText color="textMuted">{strings.account.working}</AppText> : null}
       {error ? (
         <AppText color="danger" accessibilityLiveRegion="polite">
