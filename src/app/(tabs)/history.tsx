@@ -2,6 +2,7 @@ import { ScrollView, StyleSheet } from 'react-native';
 
 import { HistoryCalendar } from '@/features/goals/history-calendar';
 import { MasteryList } from '@/features/goals/mastery-list';
+import { TypeBreakdown } from '@/features/goals/type-breakdown';
 import { WeeklyTrends } from '@/features/goals/weekly-trends';
 import { AppText } from '@/ui/app-text';
 import { strings } from '@/ui/strings';
@@ -15,6 +16,7 @@ export default function History() {
       </AppText>
       <HistoryCalendar />
       <WeeklyTrends />
+      <TypeBreakdown />
       <MasteryList />
     </ScrollView>
   );

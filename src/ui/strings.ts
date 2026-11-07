@@ -110,6 +110,17 @@ export const strings = {
     empty: 'Les tendances apparaîtront dès le début du programme.',
     loadFailed: 'Impossible de charger les tendances.',
   },
+  breakdown: {
+    title: 'Répartition par type',
+    weekTitle: (week: string, range: string) => `${week} · ${range}`,
+    previousWeek: 'Semaine précédente',
+    nextWeek: 'Semaine suivante',
+    empty: 'Aucun signe compté cette semaine.',
+    count: (total: number, percent: string) => `${total} · ${percent}`,
+    row: (name: string, total: number, percent: string) =>
+      `${name}, ${total} signes, ${percent} de la semaine`,
+    total: (total: number) => `Total de la semaine : ${total} signes`,
+  },
   calendar: {
     back: '‹',
     forward: '›',
