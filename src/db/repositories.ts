@@ -181,6 +181,22 @@ export function createEventRepository(db: SqlDatabase, deps: RepositoryDeps = de
       return Object.fromEntries(rows.map((r) => [r.typeId, r.total]));
     },
 
+    /**
+     * Which days each type was logged on, between two local days (inclusive): one row
+     * per type and day, however many events that day. Feeds the mastery colors.
+     */
+    async activeDays(
+      childId: string,
+      from: string,
+      to: string,
+    ): Promise<{ typeId: string; localDate: string }[]> {
+      return db.getAllAsync<{ typeId: string; localDate: string }>(
+        `SELECT DISTINCT type_id AS typeId, local_date AS localDate FROM event
+         WHERE child_id = ? AND local_date >= ? AND local_date <= ? AND deleted_at IS NULL`,
+        [childId, from, to],
+      );
+    },
+
     /** Live events of one local day, newest first. */
     async listByDay(childId: string, localDate: string): Promise<EventRecord[]> {
       const rows = await db.getAllAsync<EventRow>(

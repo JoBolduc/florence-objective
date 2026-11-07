@@ -10,6 +10,12 @@ export const colors = {
   primarySoft: '#D6E8FB',
   onPrimary: '#FFFFFF',
   danger: '#B3261E',
+  masteryGrey: '#4A5A6B',
+  masteryGreySoft: '#E6EAEF',
+  masteryYellow: '#6B4A00',
+  masteryYellowSoft: '#FCE9A8',
+  masteryGreen: '#17692B',
+  masteryGreenSoft: '#CDEFD6',
 };
 
 export const spacing = {

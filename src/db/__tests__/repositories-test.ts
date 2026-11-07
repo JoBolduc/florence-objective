@@ -267,3 +267,26 @@ describe('goal setting repository', () => {
     expect(await repo.firstEventDate()).toBe('2026-11-05');
   });
 });
+
+describe('event active days', () => {
+  it('lists one row per type and day, within the range, without deleted events', async () => {
+    const { events, child } = await setup();
+    const at = (day: number, hour: number) => new Date(2026, 10, day, hour);
+    await events.insert({ childId: child.id, typeId: 'fini', occurredAt: at(2, 9) });
+    await events.insert({ childId: child.id, typeId: 'fini', occurredAt: at(2, 15) });
+    await events.insert({ childId: child.id, typeId: 'fini', occurredAt: at(3, 9) });
+    await events.insert({ childId: child.id, typeId: 'encore', occurredAt: at(10, 9) });
+    const gone = await events.insert({ childId: child.id, typeId: 'aider', occurredAt: at(3, 9) });
+    await events.softDelete(gone.id);
+
+    const rows = await events.activeDays(child.id, '2026-11-02', '2026-11-08');
+
+    expect(rows).toHaveLength(2);
+    expect(rows).toEqual(
+      expect.arrayContaining([
+        { typeId: 'fini', localDate: '2026-11-02' },
+        { typeId: 'fini', localDate: '2026-11-03' },
+      ]),
+    );
+  });
+});

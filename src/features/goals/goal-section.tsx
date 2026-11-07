@@ -18,10 +18,12 @@ import {
   programWeeks,
 } from './goal-settings';
 import { useGoalSettings } from './goal-settings-provider';
+import { normalizeRule } from './mastery';
 
 /** Settings: daily target, program start and length. */
 export function GoalSection() {
-  const { settings, setDailyTarget, setProgram } = useGoalSettings();
+  const { settings, setDailyTarget, setProgram, setMastery } = useGoalSettings();
+  const rule = settings.mastery;
   const today = toLocalDate(new Date());
   const target = settings.dailyTargetOn(today);
   const weeks = programWeeks(settings.programStart, settings.programEnd);
@@ -79,6 +81,33 @@ export function GoalSection() {
       <AppText color="textMuted">
         {strings.goals.programRange(settings.programStart, settings.programEnd)}
       </AppText>
+      <AppText accessibilityRole="header" variant="label">
+        {strings.mastery.settingsTitle}
+      </AppText>
+      <Stepper
+        label={strings.mastery.window}
+        value={rule.windowDays}
+        display={strings.mastery.days(rule.windowDays)}
+        min={3}
+        max={28}
+        onChange={(v) => run(() => setMastery(normalizeRule({ ...rule, windowDays: v })))}
+      />
+      <Stepper
+        label={strings.mastery.greenDays}
+        value={rule.greenDays}
+        display={strings.mastery.days(rule.greenDays)}
+        min={1}
+        max={rule.windowDays}
+        onChange={(v) => run(() => setMastery(normalizeRule({ ...rule, greenDays: v })))}
+      />
+      <Stepper
+        label={strings.mastery.yellowDays}
+        value={rule.yellowDays}
+        display={strings.mastery.days(rule.yellowDays)}
+        min={1}
+        max={rule.greenDays}
+        onChange={(v) => run(() => setMastery(normalizeRule({ ...rule, yellowDays: v })))}
+      />
       {failed ? <AppText color="danger">{strings.goals.saveFailed}</AppText> : null}
     </View>
   );

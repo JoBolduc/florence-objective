@@ -2,6 +2,9 @@ import { useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 
 import type { CommunicationTypeRecord } from '@/db';
+import { MasteryMarker } from '@/features/goals/mastery-marker';
+import type { MasteryStatus } from '@/features/goals/mastery';
+import { useMastery } from '@/features/goals/use-mastery';
 import { useSync } from '@/features/sync/sync-provider';
 import { AppText } from '@/ui/app-text';
 import { strings } from '@/ui/strings';
@@ -22,18 +25,24 @@ const TILE_MIN_HEIGHT = 128;
 function Tile({
   type,
   count,
+  mastery,
   onPress,
   onLongPress,
 }: {
   type: CommunicationTypeRecord;
   count: number;
+  mastery: MasteryStatus | null;
   onPress: () => void;
   onLongPress: () => void;
 }) {
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={strings.today.logType(type.label, count)}
+      accessibilityLabel={
+        mastery
+          ? strings.mastery.tile(strings.today.logType(type.label, count), strings.mastery[mastery])
+          : strings.today.logType(type.label, count)
+      }
       onPress={onPress}
       onLongPress={onLongPress}
       style={({ pressed }) => [styles.tile, pressed && styles.tilePressed]}
@@ -42,6 +51,7 @@ function Tile({
         {type.icon}
       </AppText>
       <AppText variant="label">{type.label}</AppText>
+      {mastery ? <MasteryMarker status={mastery} /> : null}
       {count > 0 && (
         <View style={styles.badge}>
           <AppText variant="caption" color="onPrimary" style={styles.badgeText}>
@@ -79,6 +89,7 @@ export function TapGrid({ day }: { day: string }) {
   const [sheet, setSheet] = useState<{ id: string; focusNote: boolean } | null>(null);
   // The "which word?" sheet, opened by the Mot tile instead of logging straight away.
   const [wordSheetOpen, setWordSheetOpen] = useState(false);
+  const { byId: mastery } = useMastery(day, todayEvents);
   const { enabled: syncEnabled, state: syncState, syncNow } = useSync();
 
   if (status === 'loading') return <AppText color="textMuted">{strings.today.loading}</AppText>;
@@ -113,6 +124,7 @@ export function TapGrid({ day }: { day: string }) {
               key={type.id}
               type={type}
               count={typeCounts[type.id] ?? 0}
+              mastery={mastery[type.id] ?? null}
               onPress={() => (type.id === WORD_TYPE_ID ? setWordSheetOpen(true) : log(type.id))}
               onLongPress={() => {
                 if (type.id === WORD_TYPE_ID) {
