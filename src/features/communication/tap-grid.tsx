@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 
 import type { CommunicationTypeRecord } from '@/db';
+import { WeekSummary } from '@/features/goals/week-summary';
 import { MasteryMarker } from '@/features/goals/mastery-marker';
 import type { MasteryStatus } from '@/features/goals/mastery';
 import { useMastery } from '@/features/goals/use-mastery';
@@ -109,6 +110,7 @@ export function TapGrid({ day }: { day: string }) {
         }
       >
         <DailyCounter count={count} target={target} />
+        <WeekSummary day={day} refreshOn={todayEvents} />
         {celebrating && <Celebration target={target} onDone={endCelebration} />}
         <AppText color="textMuted" style={styles.reminder}>
           {strings.today.reminder}

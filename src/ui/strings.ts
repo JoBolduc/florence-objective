@@ -113,6 +113,8 @@ export const strings = {
   countdown: {
     week: (week: number, weeks: number) => `Semaine ${week} sur ${weeks}`,
     upcoming: (date: string) => `Le programme commence le ${date}`,
+    weekSummary: (average: string, days: number, total: number) =>
+      `Cette semaine : ${average} signes par jour, objectif atteint ${days} jour${days > 1 ? 's' : ''} sur ${total}`,
     finished: (weeks: number) => `Programme terminé (${weeks} semaines)`,
   },
   breakdown: {

@@ -15,7 +15,7 @@ type State =
  * Counted signs per type and day from the program start to today (or the program end),
  * reloaded when a sync brings in the partner's changes. Derived each time, never stored.
  */
-export function useProgramCounts(): State {
+export function useProgramCounts(refreshOn?: unknown): State {
   const { children, events } = useRepositories();
   const { settings } = useGoalSettings();
   const { state: syncState } = useSync();
@@ -38,7 +38,7 @@ export function useProgramCounts(): State {
     return () => {
       cancelled = true;
     };
-  }, [children, events, programStart, programEnd, syncState.revision]);
+  }, [children, events, programStart, programEnd, syncState.revision, refreshOn]);
 
   return state;
 }
