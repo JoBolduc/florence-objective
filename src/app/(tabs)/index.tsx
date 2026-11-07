@@ -3,6 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import { fromLocalDate } from '@/db';
 import { TapGrid } from '@/features/communication/tap-grid';
 import { useLocalDay } from '@/features/communication/use-local-day';
+import { ProgramCountdown } from '@/features/goals/program-countdown';
 import { SyncIndicator } from '@/features/sync/sync-indicator';
 import { AppText } from '@/ui/app-text';
 import { formatDate } from '@/ui/format';
@@ -21,6 +22,7 @@ export default function Today() {
       <AppText color="textMuted" style={styles.title}>
         {formatDate(fromLocalDate(day))}
       </AppText>
+      <ProgramCountdown day={day} />
       <SyncIndicator />
       <TapGrid day={day} />
     </View>

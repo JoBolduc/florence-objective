@@ -110,6 +110,11 @@ export const strings = {
     empty: 'Les tendances apparaîtront dès le début du programme.',
     loadFailed: 'Impossible de charger les tendances.',
   },
+  countdown: {
+    week: (week: number, weeks: number) => `Semaine ${week} sur ${weeks}`,
+    upcoming: (date: string) => `Le programme commence le ${date}`,
+    finished: (weeks: number) => `Programme terminé (${weeks} semaines)`,
+  },
   breakdown: {
     title: 'Répartition par type',
     weekTitle: (week: string, range: string) => `${week} · ${range}`,
