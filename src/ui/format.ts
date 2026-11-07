@@ -30,3 +30,25 @@ const monthFormatter = new Intl.DateTimeFormat(LOCALE, { month: 'long', year: 'n
 export function formatMonth(date: Date): string {
   return monthFormatter.format(date);
 }
+
+const dayMonthFormatter = new Intl.DateTimeFormat(LOCALE, { day: 'numeric', month: 'short' });
+const numberFormatter = new Intl.NumberFormat(LOCALE, { maximumFractionDigits: 1 });
+const percentFormatter = new Intl.NumberFormat(LOCALE, {
+  style: 'percent',
+  maximumFractionDigits: 0,
+});
+
+/** "2 nov." */
+export function formatDayMonth(date: Date): string {
+  return dayMonthFormatter.format(date);
+}
+
+/** "8,2" (one decimal at most) */
+export function formatNumber(value: number): string {
+  return numberFormatter.format(value);
+}
+
+/** "71 %" for 0.71 */
+export function formatPercent(share: number): string {
+  return percentFormatter.format(share);
+}

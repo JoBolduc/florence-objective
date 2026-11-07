@@ -97,6 +97,19 @@ export const strings = {
     decrease: (label: string) => `${label} : moins`,
     increase: (label: string) => `${label} : plus`,
   },
+  trends: {
+    title: 'Tendances par semaine',
+    hint: 'Moyenne de signes par jour et part des jours où l’objectif est atteint. La semaine en cours est partielle.',
+    week: (n: number) => `Sem. ${n}`,
+    range: (from: string, to: string) => `${from} au ${to}`,
+    average: (value: string) => `${value} par jour`,
+    atTarget: (percent: string, days: number, total: number) =>
+      `${percent} des jours à l’objectif (${days} sur ${total})`,
+    row: (week: string, range: string, average: string, atTarget: string) =>
+      `${week}, ${range}, ${average}, ${atTarget}`,
+    empty: 'Les tendances apparaîtront dès le début du programme.',
+    loadFailed: 'Impossible de charger les tendances.',
+  },
   calendar: {
     back: '‹',
     forward: '›',
